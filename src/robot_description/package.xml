@@ -20,7 +20,6 @@
 
   <!-- Navigation and SLAM -->
   <exec_depend>slam_gmapping</exec_depend>
-  <exec_depend>teleop_twist_joy</exec_depend>
   <exec_depend>teleop_twist_keyboard</exec_depend>
 
   <test_depend>ament_copyright</test_depend>

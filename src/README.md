@@ -90,14 +90,9 @@ ros2 launch car_nav2 car_nav2.launch.py
 
 ## 6. 如何控制小车
 
-### 6.1 手柄控制（默认已在 `gazebo.launch.py` 中启动）
+### 6.1 键盘控制（`teleop_twist_keyboard`，推荐）
 
-- 使用 `teleop_twist_joy` 发布 `/cmd_vel`
-- 日志显示的默认按键通常是：
-  - `enable button 8`：按住才使能移动
-  - `turbo button 10`：加速模式
-
-### 6.2 键盘控制（可选）
+当前项目默认使用 `teleop_twist_keyboard` 控制小车，且 `gazebo.launch.py` 不会自动启动手柄控制节点。
 
 新开终端运行：
 
@@ -107,11 +102,17 @@ source install/setup.bash
 ros2 run teleop_twist_keyboard teleop_twist_keyboard
 ```
 
-常用键位（官方默认）：
-- `i` 前进
-- `,` 后退
-- `j/l` 原地左/右转
-- `k` 停止
+默认控制键位（官方）：
+- `i`：前进
+- `,`：后退
+- `j` / `l`：左转 / 右转
+- `u` / `o`：前进左转 / 前进右转
+- `m` / `.`：后退左转 / 后退右转
+- `k`：停止
+- `q/z`：整体提速 / 降速（线速度与角速度）
+- `w/x`：仅调整线速度上限
+- `e/c`：仅调整角速度上限
+
 ## 7. 常见问题
 
 ### 7.0 `teleop_twist_keyboard` 未安装

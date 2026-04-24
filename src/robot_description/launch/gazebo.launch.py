@@ -102,11 +102,6 @@ def generate_launch_description():
         output='screen',
     )
 
-    teleop_node_cmd = ExecuteProcess(
-        cmd=['ros2', 'launch', 'teleop_twist_joy', 'teleop-launch.py', 'joy_vel:=/cmd_vel'],
-        output='screen',
-    )
-
     slam_launch_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(
@@ -152,7 +147,6 @@ def generate_launch_description():
         robot_state_publisher_node,
         spawn_entity_node,
         robot_localization_node,
-        teleop_node_cmd,
         slam_launch_cmd,
         rviz2_node,
     ])

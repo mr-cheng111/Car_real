@@ -98,6 +98,27 @@ def generate_launch_description():
         condition=IfCondition(start_sim),
     )
 
+    rf2o_node = Node(
+        package='rf2o_laser_odometry',
+        executable='rf2o_laser_odometry_node',
+        name='rf2o_laser_odometry',
+        output='screen',
+        parameters=[{
+            'use_sim_time': use_sim_time,
+            'laser_scan_topic': '/scan',
+            'odom_topic': '/odom_rf2o',
+            'publish_tf': False,
+            'base_frame_id': 'base_link',
+            'odom_frame_id': 'odom',
+            'init_pose_from_topic': '',
+            'init_pose_from_imu_topic': '/imu',
+            'motion_filter_linear_m': 0.06,
+            'motion_filter_angular_rad': 0.0020944,
+            'freq': 30.0,
+        }],
+        condition=IfCondition(start_sim),
+    )
+
     robot_localization_node = Node(
         package='robot_localization',
         executable='ekf_node',
@@ -155,6 +176,7 @@ def generate_launch_description():
         gazebo_cmd,
         robot_state_publisher_node,
         delayed_spawn_entity,
+        rf2o_node,
         robot_localization_node,
         nav2_bringup_launch,
         delayed_nav2_bringup_launch,

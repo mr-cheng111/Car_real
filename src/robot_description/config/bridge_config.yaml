@@ -12,12 +12,8 @@
   gz_type_name: "gz.msgs.Model"
   direction: GZ_TO_ROS
 
-# gz topic published by DiffDrive plugin
-- ros_topic_name: "odom_raw"
-  gz_topic_name: "odom"
-  ros_type_name: "nav_msgs/msg/Odometry"
-  gz_type_name: "gz.msgs.Odometry"
-  direction: GZ_TO_ROS
+# DiffDrive odom bridging is disabled for now.
+# EKF currently fuses odom_rf2o + imu.
 
 # Gazebo TF (odom->base_link) published by DiffDrive plugin
 # - ros_topic_name: "tf"

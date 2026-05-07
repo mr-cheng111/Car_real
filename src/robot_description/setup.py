@@ -26,6 +26,8 @@ setup(
     license='Apache License 2.0',
     tests_require=['pytest'],
     entry_points={
-        'console_scripts': [],
+        'console_scripts': [
+            'imu_covariance_relay = robot_description.imu_covariance_relay:main',
+        ],
     },
 )

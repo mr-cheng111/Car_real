@@ -4,18 +4,36 @@
 
   <link name="base_link">
     <visual>
-      <origin xyz="0 0 0.0" rpy="0 0 0"/>
+      <origin xyz="0 0 0.05" rpy="0 0 0"/>
       <geometry>
-        <box size="0.1 0.1 0.04"/>
+        <box size="0.16 0.20 0.10"/>
+      </geometry>
+      <material name="blue">
+      	<color rgba = "0.1 0.1 1.0 0.5"/>
+      </material>
+    </visual>
+    <visual>
+      <origin xyz="0.14 0 0.05" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.12 0.08 0.10"/>
       </geometry>
       <material name="blue">
       	<color rgba = "0.1 0.1 1.0 0.5"/>
       </material>
     </visual>
     <collision>
-      <origin xyz="0 0 0.0" rpy="0 0 0"/>
+      <origin xyz="0 0 0.05" rpy="0 0 0"/>
       <geometry>
-        <box size="0.1 0.1 0.04"/>
+        <box size="0.16 0.20 0.10"/>
+      </geometry>
+      <material name="blue">
+          <color rgba="0.1 0.1 1.0 0.5" /> 
+      </material>
+    </collision>
+    <collision>
+      <origin xyz="0.14 0 0.05" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.12 0.08 0.10"/>
       </geometry>
       <material name="blue">
           <color rgba="0.1 0.1 1.0 0.5" /> 
@@ -57,14 +75,14 @@
     <joint name="laser_joint" type="fixed">
         <parent link="base_link" />
         <child link="laser_link" />
-        <origin xyz="0 0 0.03" rpy="0 0 0"/>
+        <origin xyz="0.10 0 0.285" rpy="0 0 0"/>
     </joint>
     
   <link name="left_wheel_link">
       <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <cylinder length="0.02" radius="0.02"/>
+        <cylinder length="0.025" radius="0.035"/>
       </geometry>
       <material name="yellow">
           <color rgba="1.0 1.0 0.0 0.8" /> 
@@ -73,7 +91,7 @@
     <collision>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
-          <cylinder length="0.02" radius="0.02"/>
+          <cylinder length="0.025" radius="0.035"/>
         </geometry>
         <material name="black">
           <color rgba="0.0 0.0 0.0 0.5" /> 
@@ -89,8 +107,9 @@
     <joint name="left_wheel_joint" type="continuous">
         <parent link="base_link" />
         <child link="left_wheel_link" />
-        <origin xyz="0 0.05 -0.015" rpy="1.57079 0 0"/>
+        <origin xyz="0 0.15 0.0" rpy="1.57079 0 0"/>
         <axis xyz="0 0 -1" />
+        <dynamics damping="0.5" friction="0.1" />
     </joint>
 
 
@@ -98,7 +117,7 @@
       <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <cylinder length="0.02" radius="0.02"/>
+        <cylinder length="0.025" radius="0.035"/>
       </geometry>
       <material name="yellow">
           <color rgba="1.0 1.0 0.0 0.8" /> 
@@ -107,7 +126,7 @@
     <collision>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
-          <cylinder length="0.02" radius="0.02"/>
+          <cylinder length="0.025" radius="0.035"/>
         </geometry>
         <material name="black">
           <color rgba="0.0 0.0 0.0 0.5" /> 
@@ -122,8 +141,9 @@
     <joint name="right_wheel_joint" type="continuous">
         <parent link="base_link" />
         <child link="right_wheel_link" />
-        <origin xyz="0 -0.05 -0.015" rpy="1.57079 0 0"/>
+        <origin xyz="0 -0.15 0.0" rpy="1.57079 0 0"/>
         <axis xyz="0 0 -1" />
+        <dynamics damping="0.5" friction="0.1" />
     </joint> 
 
   <link name="front_boll_link">
@@ -156,40 +176,7 @@
     <joint name="front_boll_joint" type="fixed">
         <parent link="base_link" />
         <child link="front_boll_link" />
-        <origin xyz="0.025 0 -0.015" />
-    </joint>
-
-  <link name="behind_boll_link">
-      <visual>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <geometry>
-        <sphere radius="0.02"/>
-      </geometry>
-      <material name="blue">
-          <color rgba="0.0 0.0 1.0 0.8" /> 
-      </material>
-    </visual>
-    <collision>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <sphere radius="0.02"/>
-        </geometry>
-        <material name="black">
-          <color rgba="0.0 0.0 0.0 0.5" /> 
-        </material>
-    </collision>
-  </link>
-  <gazebo reference="behind_boll_link">
-    <mu1 value="0.0"/>
-    <mu2 value="0.0"/>
-    <kp value="1000000.0" />
-    <kd value="10.0" />
-  </gazebo>
-
-    <joint name="behind_boll_joint" type="fixed">
-        <parent link="base_link" />
-        <child link="behind_boll_link" />
-        <origin xyz="-0.025 0.0 -0.015" />
+        <origin xyz="0.18 0 -0.015" />
     </joint>
 
   <link name="imu_link">
@@ -204,7 +191,7 @@
   <joint name="imu_joint" type="fixed">
     <parent link="base_link" />
     <child link="imu_link" />
-    <origin xyz="0 0 0.03" rpy="0 0 0"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
   </joint>
   
   
@@ -213,37 +200,37 @@
       <plugin name="imu_plugin" filename="libgazebo_ros_imu_sensor.so">
           <ros>
             <namespace>/</namespace>
-            <remapping>~/out:=imu</remapping>
+            <remapping>~/out:=imu/raw</remapping>
           </ros>
           <initial_orientation_as_reference>false</initial_orientation_as_reference>
       </plugin>
       <always_on>true</always_on>
-      <update_rate>175</update_rate>
+      <update_rate>104</update_rate>
       <visualize>true</visualize>
       <imu>
         <angular_velocity>
          <x>
          <noise type="gaussian">
            <mean>0.0</mean>
-           <stddev>32.0844</stddev>
-           <bias_mean>0.333963</bias_mean>
-           <bias_stddev>0.000000</bias_stddev>
+           <stddev>0.0012</stddev>
+           <bias_mean>0.0</bias_mean>
+           <bias_stddev>0.0002</bias_stddev>
          </noise>
          </x>
          <y>
           <noise type="gaussian">
             <mean>0.0</mean>
-            <stddev>27.6577</stddev>
-            <bias_mean>-0.132765</bias_mean>
-            <bias_stddev>0.000000</bias_stddev>
+            <stddev>0.0012</stddev>
+            <bias_mean>0.0</bias_mean>
+            <bias_stddev>0.0002</bias_stddev>
           </noise>
          </y>
          <z>
            <noise type="gaussian">
              <mean>0.0</mean>
-             <stddev>33.8533</stddev>
-             <bias_mean>-0.272867</bias_mean>
-             <bias_stddev>0.000000</bias_stddev>
+             <stddev>0.0012</stddev>
+             <bias_mean>0.0</bias_mean>
+             <bias_stddev>0.0002</bias_stddev>
            </noise>
          </z>
         </angular_velocity>
@@ -251,25 +238,25 @@
          <x>
            <noise type="gaussian">
              <mean>0.0</mean>
-             <stddev>0.036335</stddev>
+             <stddev>0.008</stddev>
              <bias_mean>0.0</bias_mean>
-             <bias_stddev>0.000</bias_stddev>
+             <bias_stddev>0.001</bias_stddev>
            </noise>
           </x>
           <y>
            <noise type="gaussian">
              <mean>0.0</mean>
-             <stddev>0.0295582</stddev>
+             <stddev>0.008</stddev>
              <bias_mean>0.0</bias_mean>
-             <bias_stddev>0.000</bias_stddev>
+             <bias_stddev>0.001</bias_stddev>
            </noise>
           </y>
           <z>
            <noise type="gaussian">
              <mean>0.0</mean>
-             <stddev>0.035191</stddev>
+             <stddev>0.008</stddev>
              <bias_mean>0.0</bias_mean>
-             <bias_stddev>0.000</bias_stddev>
+             <bias_stddev>0.001</bias_stddev>
            </noise>
           </z>
         </linear_acceleration>
@@ -287,26 +274,26 @@
       </plugin>
       <always_on>true</always_on>
       <visualize>true</visualize>
-      <update_rate>30</update_rate>
-      <pose>0 0 0.03 0 0 3.1415926</pose>
+      <update_rate>10</update_rate>
+      <pose>0 0 0 0 0 3.1415926</pose>
       <ray>
           <scan>
             <horizontal>
-              <samples>2701</samples>
+              <samples>500</samples>
               <resolution>1.0</resolution>
-              <min_angle>-2.35619449</min_angle>
-              <max_angle>2.35619449</max_angle>
+              <min_angle>-3.1415926</min_angle>
+              <max_angle>3.1415926</max_angle>
             </horizontal>
           </scan>
           <range>
-            <min>0.10000</min>
-            <max>12</max>
-            <resolution>0.001000</resolution>
+            <min>0.05000</min>
+            <max>6</max>
+            <resolution>0.015000</resolution>
           </range>
           <noise>
             <type>gaussian</type>
             <mean>0.0</mean>
-            <stddev>0.01</stddev>
+            <stddev>0.03</stddev>
           </noise>
       </ray>
     </sensor>
@@ -324,15 +311,16 @@
           <left_joint>left_wheel_joint</left_joint>
           <right_joint>right_wheel_joint</right_joint>
           <!-- kinematics -->
-          <wheel_separation>0.1</wheel_separation>
-          <wheel_diameter>0.04</wheel_diameter>
+          <wheel_separation>0.3</wheel_separation>
+          <wheel_diameter>0.07</wheel_diameter>
           <!-- limits -->
           <max_wheel_torque>20</max_wheel_torque>
           <max_wheel_acceleration>1.0</max_wheel_acceleration>
           <!-- output -->
-          <publish_odom>false</publish_odom>
+          <publish_odom>true</publish_odom>
           <publish_odom_tf>false</publish_odom_tf>
           <publish_wheel_tf>true</publish_wheel_tf>
+          <odometry_topic>odom_raw</odometry_topic>
           <odometry_frame>odom</odometry_frame>
           <robot_base_frame>base_link</robot_base_frame>
 	</plugin>

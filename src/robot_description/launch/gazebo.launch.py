@@ -1,7 +1,6 @@
 import os
-import shutil
 
-from ament_index_python.packages import PackageNotFoundError, get_package_share_directory
+from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription, LogInfo, SetEnvironmentVariable
 from launch.conditions import IfCondition
@@ -41,67 +40,19 @@ def generate_launch_description():
         }],
     )
 
-    # Prefer gz pipeline when ros_gz packages are available.
-    # The current robot model uses gz plugins for lidar/diffdrive.
-    if shutil.which('gz'):
-        try:
-            get_package_share_directory('ros_gz_sim')
-            get_package_share_directory('ros_gz_bridge')
-            sim_launch = IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(os.path.join(pkg_share, 'launch', 'sim.launch.py')),
-                launch_arguments={'use_sim_time': use_sim_time}.items(),
-            )
-            return LaunchDescription([
-                DeclareLaunchArgument(
-                    'use_sim_time',
-                    default_value='true',
-                    description='Use simulation time',
-                ),
-                DeclareLaunchArgument(
-                    'enable_rf2o',
-                    default_value='false',
-                    description='Start rf2o laser odometry node and publish /odom_rf2o',
-                ),
-                DeclareLaunchArgument(
-                    'rf2o_publish_tf',
-                    default_value='false',
-                    description='Whether rf2o should publish odom->base_link TF',
-                ),
-                LogInfo(msg='Detected ros_gz stack, launching robot_description/sim.launch.py'),
-                sim_launch,
-                rf2o_node,
-            ])
-        except PackageNotFoundError:
-            pass
-
-    # Fallback: Gazebo Classic pipeline
     with open(urdf_model_path, 'r', encoding='utf-8') as f:
         robot_description_content = f.read()
 
     gazebo_world_path = os.path.join(pkg_share, 'world/sim.world')
-
-    if shutil.which('gazebo'):
-        gazebo_cmd = [
-            'gazebo',
-            '--verbose',
-            gazebo_world_path,
-            '-s',
-            'libgazebo_ros_init.so',
-            '-s',
-            'libgazebo_ros_factory.so',
-        ]
-    elif shutil.which('gz'):
-        gazebo_cmd = ['gz', 'sim', gazebo_world_path]
-    else:
-        gazebo_cmd = [
-            'gazebo',
-            '--verbose',
-            gazebo_world_path,
-            '-s',
-            'libgazebo_ros_init.so',
-            '-s',
-            'libgazebo_ros_factory.so',
-        ]
+    gazebo_cmd = [
+        'gazebo',
+        '--verbose',
+        gazebo_world_path,
+        '-s',
+        'libgazebo_ros_init.so',
+        '-s',
+        'libgazebo_ros_factory.so',
+    ]
 
     set_master_uri = SetEnvironmentVariable(
         name='GAZEBO_MASTER_URI',
@@ -140,9 +91,9 @@ def generate_launch_description():
     slam_launch_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(
-                get_package_share_directory('slam_gmapping'),
+                pkg_share,
                 'launch',
-                'slam_gmapping.launch.py',
+                'cartographer.launch.py',
             )
         ),
         launch_arguments={'use_sim_time': use_sim_time}.items(),
@@ -158,6 +109,14 @@ def generate_launch_description():
             os.path.join(pkg_share, 'config/ekf.yaml'),
             {'use_sim_time': use_sim_time},
         ],
+    )
+
+    imu_covariance_relay_node = Node(
+        package='robot_description',
+        executable='imu_covariance_relay',
+        name='imu_covariance_relay',
+        output='screen',
+        parameters=[{'use_sim_time': use_sim_time}],
     )
 
     rviz2_node = Node(
@@ -184,13 +143,14 @@ def generate_launch_description():
             default_value='false',
             description='Whether rf2o should publish odom->base_link TF',
         ),
-        LogInfo(msg='ros_gz not found, using Gazebo Classic fallback'),
+        LogInfo(msg='Using Gazebo Classic pipeline'),
         set_use_sim_time,
         set_master_uri,
         set_gazebo_ip,
         start_gazebo_cmd,
         robot_state_publisher_node,
         spawn_entity_node,
+        imu_covariance_relay_node,
         robot_localization_node,
         rf2o_node,
         slam_launch_cmd,

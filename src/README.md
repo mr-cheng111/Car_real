@@ -6,7 +6,7 @@
 - `slam_gmapping`：ROS2 版 gmapping
 - `teleop_twist_keyboard`：官方键盘遥控工具（系统包）
 
-当前仓库已针对 **ROS 2 Humble** 做过基础兼容修正（例如 `nav2_bringup` 依赖拼写）。
+当前仓库已针对 **ROS 2 Humble** 做过基础兼容修正（例如 `nav2_bringup` 依赖拼写），并统一使用 **Gazebo Classic** 仿真链路。
 
 ## 1. 环境要求
 
@@ -21,9 +21,8 @@
 # 查看 ROS 发行版（应输出 humble）
 echo $ROS_DISTRO
 
-# 检查 classic 与 gz 命令是否存在
+# 检查 classic 命令是否存在
 command -v gazebo
-command -v gz
 
 # 查看 classic 版本（如果安装了）
 gazebo --version
@@ -31,7 +30,6 @@ gazebo --version
 
 说明：
 - 若 `gazebo --version` 有输出（例如 11.x），说明 Gazebo Classic 可用。
-- 若要使用 `sim.launch.py` 的 `gz` 链路，还需要安装 `ros_gz_sim`、`ros_gz_bridge` 等桥接包。
 
 ## 3. 安装依赖
 
@@ -144,14 +142,6 @@ sudo apt update
 sudo apt install -y gazebo ros-humble-gazebo-ros-pkgs
 ```
 
-### 7.3 `ros_gz_bridge` / `ros_gz_sim` not found
-
-说明：你在跑 `sim.launch.py`，但没装 `ros_gz` 相关包。
-
-处理（二选一）：
-- 直接改用 `gazebo.launch.py`（推荐，Humble 下更稳）
-- 或补装对应 `ros_gz` 包后再用 `sim.launch.py`
-
 ## 8. 代码结构
 
 ```text
@@ -163,7 +153,7 @@ src/
 
 ## 9. 维护建议
 
-- 新增 launch 时，优先明确仿真后端（classic 或 gz），避免混用。
+- 新增 launch 时，保持 Gazebo Classic 链路一致，避免重新引入多后端混用。
 - 每次改完依赖后，执行一次：
 
 ```bash

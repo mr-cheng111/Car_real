@@ -1,7 +1,6 @@
 import os
-import shutil
 
-from ament_index_python.packages import PackageNotFoundError, get_package_share_directory
+from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription, LogInfo, SetEnvironmentVariable
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -15,10 +14,8 @@ def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time')
 
     urdf_file = os.path.join(pkg_share, 'urdf', 'robot_gazebo.urdf')
-    sdf_file = os.path.join(pkg_share, 'sdf', 'robot_gazebo.sdf')
     world_file = os.path.join(pkg_share, 'world', 'sim.world')
     ekf_config = os.path.join(pkg_share, 'config', 'ekf.yaml')
-    bridge_config = os.path.join(pkg_share, 'config', 'bridge_config.yaml')
 
     with open(urdf_file, 'r', encoding='utf-8') as f:
         robot_description_content = f.read()
@@ -60,78 +57,15 @@ def generate_launch_description():
         parameters=[{'use_sim_time': use_sim_time}],
     )
 
-    # Prefer gz pipeline when ros_gz packages are available.
-    if shutil.which('gz'):
-        try:
-            get_package_share_directory('ros_gz_sim')
-            get_package_share_directory('ros_gz_bridge')
-
-            gazebo_server_cmd = ExecuteProcess(
-                cmd=['gz', 'sim', '-r', '-s', '-v', '4', world_file],
-                output='screen',
-            )
-            gazebo_client_cmd = ExecuteProcess(
-                cmd=['gz', 'sim', '-g'],
-                output='screen',
-            )
-
-            spawn_entity_node = Node(
-                package='ros_gz_sim',
-                executable='create',
-                arguments=['-file', sdf_file, '-name', 'robot', '-z', '0.03'],
-                output='screen',
-            )
-
-            ros_gz_bridge_node = Node(
-                package='ros_gz_bridge',
-                executable='parameter_bridge',
-                parameters=[{'config_file': bridge_config, 'use_sim_time': use_sim_time}],
-                output='screen',
-            )
-
-            return LaunchDescription([
-                DeclareLaunchArgument(
-                    'use_sim_time',
-                    default_value='true',
-                    description='Use simulation time',
-                ),
-                SetParameter(name='use_sim_time', value=use_sim_time),
-                LogInfo(msg='Detected ros_gz stack, using gz simulation pipeline for robot_model.launch.py'),
-                gazebo_server_cmd,
-                gazebo_client_cmd,
-                spawn_entity_node,
-                ros_gz_bridge_node,
-                robot_state_publisher_node,
-                robot_localization_node,
-                nav2_launch_cmd,
-                rviz2_node,
-            ])
-        except PackageNotFoundError:
-            pass
-
-    # Fallback: Gazebo Classic pipeline
-    if shutil.which('gazebo'):
-        gazebo_cmd = [
-            'gazebo',
-            '--verbose',
-            world_file,
-            '-s',
-            'libgazebo_ros_init.so',
-            '-s',
-            'libgazebo_ros_factory.so',
-        ]
-    elif shutil.which('gz'):
-        gazebo_cmd = ['gz', 'sim', world_file]
-    else:
-        gazebo_cmd = [
-            'gazebo',
-            '--verbose',
-            world_file,
-            '-s',
-            'libgazebo_ros_init.so',
-            '-s',
-            'libgazebo_ros_factory.so',
-        ]
+    gazebo_cmd = [
+        'gazebo',
+        '--verbose',
+        world_file,
+        '-s',
+        'libgazebo_ros_init.so',
+        '-s',
+        'libgazebo_ros_factory.so',
+    ]
 
     set_master_uri = SetEnvironmentVariable(
         name='GAZEBO_MASTER_URI',
@@ -162,7 +96,7 @@ def generate_launch_description():
             default_value='true',
             description='Use simulation time',
         ),
-        LogInfo(msg='ros_gz not found, using Gazebo Classic fallback for robot_model.launch.py'),
+        LogInfo(msg='Using Gazebo Classic pipeline for robot_model.launch.py'),
         set_use_sim_time,
         set_master_uri,
         set_gazebo_ip,

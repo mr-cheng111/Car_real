@@ -12,13 +12,16 @@
   <!-- Gazebo Harmonic (built-in plugins, no external dependency needed) -->
 
   <!-- Robot state and localization -->
+  <exec_depend>rclpy</exec_depend>
   <exec_depend>robot_state_publisher</exec_depend>
   <exec_depend>robot_localization</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
 
   <!-- Visualization -->
   <exec_depend>rviz2</exec_depend>
 
   <!-- Navigation and SLAM -->
+  <exec_depend>cartographer_ros</exec_depend>
   <exec_depend>slam_gmapping</exec_depend>
   <exec_depend>teleop_twist_keyboard</exec_depend>
 

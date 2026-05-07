@@ -47,14 +47,6 @@ sudo apt install -y \
 
 说明：`python3-lxml` 是 `gazebo_ros/spawn_entity.py` 需要的 Python 依赖。
 
-### 3.3 可选（仅在你使用 `sim.launch.py` 的 gz 链路时）
-
-```bash
-sudo apt install -y \
-  ros-humble-ros-gz-bridge \
-  ros-humble-ros-gz-sim
-```
-
 ## 4. 编译
 
 ```bash

@@ -66,8 +66,8 @@ class DiffDriveTestNode(Node):
         # 1. 差速逆解: 计算左右轮理论线速度
         # 约定 angular_z > 0 为左转(CCW)。
         # 对当前硬件映射需使用该符号组合，避免左右转反向。
-        vl = linear_x - (angular_z * self.wheel_track / 2.0)
-        vr = linear_x + (angular_z * self.wheel_track / 2.0)
+        vl = linear_x + (angular_z * self.wheel_track / 2.0)
+        vr = linear_x - (angular_z * self.wheel_track / 2.0)
 
         # 2. 这里的系数可自行与 max_speed 做等比转换
         # 假设发出的期望就是基于 max_speed 的标量比例进行设置

@@ -27,9 +27,9 @@ class DifferentialChassis:
         data = []
         # 约定: ROS 中 angular_speed > 0 表示左转(CCW)
         # 对当前硬件映射(ID1=右轮正向前进, ID2=左轮正向后退)，
-        # angular_speed > 0 时右轮更快、左轮更慢，保证执行左转。
-        vl = linear_speed - angular_speed * self.track_width / 2.0
-        vr = linear_speed + angular_speed * self.track_width / 2.0
+        # 需要使用如下符号组合，保证左转命令不会被执行成右转。
+        vl = linear_speed + angular_speed * self.track_width / 2.0
+        vr = linear_speed - angular_speed * self.track_width / 2.0
 
         # 当前硬件映射(与 diff_drive_test_node 保持一致):
         # ID 1 -> 右轮 (正号为前进)

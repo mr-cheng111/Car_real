@@ -16,3 +16,9 @@ __pycache__/
 .claude/
 .cursor/
 .roo/
+
+# Demo runtime artifacts
+src/demo/logs/
+src/demo/chat_history.log
+src/demo/robot_memory.json
+src/demo/named_points_v0.json

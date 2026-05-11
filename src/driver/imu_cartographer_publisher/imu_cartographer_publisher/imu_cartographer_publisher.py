@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import ctypes
 import fcntl
 import math
 import os
@@ -21,14 +22,48 @@ except ImportError:
 
 
 I2C_SLAVE_FORCE = 0x0706
+I2C_RDWR = 0x0707
+I2C_M_RD = 0x0001
 
+WHO_AM_I = 0x0F
 CTRL1_XL = 0x10
 CTRL2_G = 0x11
+CTRL3_C = 0x12
 OUTX_L_G = 0x22
+
+EXPECTED_WHO_AM_I = {0x6A, 0x6B}
+
+ODR_TO_REG = {
+    12.5: 0x10,
+    26.0: 0x20,
+    52.0: 0x30,
+    104.0: 0x40,
+    208.0: 0x50,
+    416.0: 0x60,
+    833.0: 0x70,
+}
 
 DEFAULT_GYRO_SCALE_RAD = 0.000152716
 DEFAULT_ACCEL_SCALE_G = 0.061 / 1000.0
+DEFAULT_ODR_HZ = 208.0
+DEFAULT_SAMPLE_PERIOD = 0.005
 GRAVITY = 9.80665
+
+
+class I2CMsg(ctypes.Structure):
+    _fields_ = [
+        ("addr", ctypes.c_uint16),
+        ("flags", ctypes.c_uint16),
+        ("len", ctypes.c_uint16),
+        ("buf", ctypes.POINTER(ctypes.c_uint8)),
+    ]
+
+
+class I2CRdwrData(ctypes.Structure):
+    _fields_ = [
+        ("msgs", ctypes.POINTER(I2CMsg)),
+        ("nmsgs", ctypes.c_uint32),
+    ]
 
 
 class MahonyAHRS:
@@ -104,9 +139,10 @@ class MahonyAHRS:
 
 
 class I2CImu:
-    def __init__(self, bus, addr, gyro_scale_rad, accel_scale_g):
+    def __init__(self, bus, addr, odr_hz, gyro_scale_rad, accel_scale_g):
         self.path = f"/dev/i2c-{bus}"
         self.addr = addr
+        self.odr_hz = odr_hz
         self.gyro_scale_rad = gyro_scale_rad
         self.accel_scale_ms2 = accel_scale_g * GRAVITY
         self.fd = None
@@ -114,10 +150,34 @@ class I2CImu:
     def open(self):
         self.fd = os.open(self.path, os.O_RDWR)
         fcntl.ioctl(self.fd, I2C_SLAVE_FORCE, self.addr)
-        os.write(self.fd, bytes([CTRL2_G, 0x10]))
+        # CTRL3_C: BDU=1 锁存高低字节，IF_INC=1 允许从 OUTX_L_G 开始自动递增读取 12 字节。
+        self.write_reg(CTRL3_C, 0x44)
         time.sleep(0.01)
-        os.write(self.fd, bytes([CTRL1_XL, 0x10]))
+
+        odr_reg = odr_to_reg_value(self.odr_hz)
+        # CTRL2_G/CTRL1_XL: ODR[7:4] 设置输出频率，FS[3:2]=00 对应 gyro ±250dps、accel ±2g。
+        self.write_reg(CTRL2_G, odr_reg)
         time.sleep(0.01)
+        self.write_reg(CTRL1_XL, odr_reg)
+        # 至少等待一个输出周期，公式：T = 1 / ODR，确保后续读取到新样本。
+        time.sleep(max(0.01, 1.0 / self.odr_hz))
+
+        who_am_i = self.read_reg(WHO_AM_I)
+        if who_am_i not in EXPECTED_WHO_AM_I:
+            raise RuntimeError(
+                f"unexpected IMU WHO_AM_I=0x{who_am_i:02X} on {self.path} addr=0x{self.addr:02X}"
+            )
+
+        ctrl3 = self.read_reg(CTRL3_C)
+        if (ctrl3 & 0x44) != 0x44:
+            raise RuntimeError(f"IMU CTRL3_C write failed: read back 0x{ctrl3:02X}")
+
+        ctrl2 = self.read_reg(CTRL2_G)
+        ctrl1 = self.read_reg(CTRL1_XL)
+        if (ctrl2 & 0xF0) != odr_reg or (ctrl1 & 0xF0) != odr_reg:
+            raise RuntimeError(
+                f"IMU ODR write failed: CTRL2_G=0x{ctrl2:02X}, CTRL1_XL=0x{ctrl1:02X}, expected ODR bits 0x{odr_reg:02X}"
+            )
 
     def close(self):
         if self.fd is not None:
@@ -128,9 +188,28 @@ class I2CImu:
     def _i16(lo, hi):
         return struct.unpack("<h", bytes([lo, hi]))[0]
 
+    def write_reg(self, reg, value):
+        os.write(self.fd, bytes([reg & 0xFF, value & 0xFF]))
+
+    def read_reg(self, reg):
+        return self.read_regs(reg, 1)[0]
+
+    def read_regs(self, start_reg, length):
+        if length <= 0:
+            return b""
+
+        reg_buf = (ctypes.c_uint8 * 1)(start_reg & 0xFF)
+        data_buf = (ctypes.c_uint8 * length)()
+        msgs = (I2CMsg * 2)(
+            I2CMsg(self.addr, 0, 1, reg_buf),
+            I2CMsg(self.addr, I2C_M_RD, length, data_buf),
+        )
+        ioctl_data = I2CRdwrData(msgs, 2)
+        fcntl.ioctl(self.fd, I2C_RDWR, ioctl_data)
+        return bytes(data_buf)
+
     def read_sensor_units(self):
-        os.write(self.fd, bytes([OUTX_L_G]))
-        data = os.read(self.fd, 12)
+        data = self.read_regs(OUTX_L_G, 12)
         if len(data) != 12:
             raise RuntimeError(f"IMU read length unexpected: {len(data)}")
 
@@ -177,6 +256,14 @@ def clamp(value, limit):
     return max(-limit, min(limit, value))
 
 
+def odr_to_reg_value(odr_hz):
+    for supported_hz, reg_value in ODR_TO_REG.items():
+        if math.isclose(odr_hz, supported_hz, rel_tol=0.0, abs_tol=1e-6):
+            return reg_value
+    supported = ", ".join(str(value) for value in ODR_TO_REG)
+    raise ValueError(f"unsupported ASM330LHH ODR {odr_hz}; supported values: {supported}")
+
+
 def calibrate_gyro(imu, samples, sample_period, wait_sec, max_abs_rad_s):
     print("开始陀螺仪静态校正，请保持机器人完全静止")
     time.sleep(wait_sec)
@@ -213,7 +300,7 @@ class ImuCartographerNode(Node):
         super().__init__("imu_cartographer_publisher")
         self.args = args
         self.mapping = parse_axis_map(args.axis_map)
-        self.imu = I2CImu(args.i2c_bus, args.device_addr, args.gyro_scale_rad, args.accel_scale_g)
+        self.imu = I2CImu(args.i2c_bus, args.device_addr, args.odr_hz, args.gyro_scale_rad, args.accel_scale_g)
         self.imu.open()
 
         self.bias, _ = calibrate_gyro(
@@ -325,7 +412,7 @@ class ImuCartographerNode(Node):
 
 def print_only_loop(args):
     mapping = parse_axis_map(args.axis_map)
-    imu = I2CImu(args.i2c_bus, args.device_addr, args.gyro_scale_rad, args.accel_scale_g)
+    imu = I2CImu(args.i2c_bus, args.device_addr, args.odr_hz, args.gyro_scale_rad, args.accel_scale_g)
     imu.open()
     try:
         bias, _ = calibrate_gyro(
@@ -381,6 +468,25 @@ def print_only_loop(args):
         imu.close()
 
 
+def diagnose_loop(args):
+    imu = I2CImu(args.i2c_bus, args.device_addr, args.odr_hz, args.gyro_scale_rad, args.accel_scale_g)
+    imu.open()
+    try:
+        print("开始输出 IMU 原始传感器坐标系数据，Ctrl-C 停止")
+        while True:
+            gyro_sensor, accel_sensor = imu.read_sensor_units()
+            accel_norm = math.sqrt(sum(v * v for v in accel_sensor))
+            print(
+                f"gyro_sensor=({gyro_sensor[0]: .5f}, {gyro_sensor[1]: .5f}, {gyro_sensor[2]: .5f}) rad/s | "
+                f"accel_sensor=({accel_sensor[0]: .5f}, {accel_sensor[1]: .5f}, {accel_sensor[2]: .5f}) m/s^2 | "
+                f"|a|={accel_norm:.5f}",
+                flush=True,
+            )
+            time.sleep(args.sample_period)
+    finally:
+        imu.close()
+
+
 def build_arg_parser():
     parser = argparse.ArgumentParser(
         description="Read ASM330LHH over I2C and publish Cartographer-compatible sensor_msgs/Imu."
@@ -389,7 +495,8 @@ def build_arg_parser():
     parser.add_argument("--frame-id", default="imu_link", help="IMU frame_id; match Cartographer tracking_frame")
     parser.add_argument("--i2c-bus", type=int, default=4)
     parser.add_argument("--device-addr", type=lambda value: int(value, 0), default=0x6A)
-    parser.add_argument("--sample-period", type=float, default=0.08)
+    parser.add_argument("--sample-period", type=float, default=DEFAULT_SAMPLE_PERIOD)
+    parser.add_argument("--odr-hz", type=float, default=DEFAULT_ODR_HZ, help="ASM330LHH output data rate. Use 208 for ~200Hz reads.")
     parser.add_argument("--calibration-samples", type=int, default=50)
     parser.add_argument("--calibration-wait-sec", type=float, default=1.0)
     parser.add_argument("--calibration-max-gyro-rad-s", type=float, default=0.35)
@@ -418,6 +525,7 @@ def build_arg_parser():
     )
     parser.add_argument("--print-debug", action="store_true")
     parser.add_argument("--print-only", action="store_true", help="Do not use ROS; only print mapped values.")
+    parser.add_argument("--diagnose-raw", action="store_true", help="Print raw sensor-frame values without mapping/filtering.")
     return parser
 
 
@@ -426,6 +534,10 @@ def main():
     if remove_ros_args is not None:
         argv = remove_ros_args(args=argv)
     args = build_arg_parser().parse_args(argv)
+
+    if args.diagnose_raw:
+        diagnose_loop(args)
+        return
 
     if args.print_only:
         print_only_loop(args)

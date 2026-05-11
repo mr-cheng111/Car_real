@@ -16,6 +16,7 @@ def launch_setup(context):
     i2c_bus = LaunchConfiguration("i2c_bus")
     device_addr = LaunchConfiguration("device_addr")
     sample_period = LaunchConfiguration("sample_period")
+    odr_hz = LaunchConfiguration("odr_hz")
     axis_map = LaunchConfiguration("axis_map")
 
     imu_arguments = [
@@ -24,6 +25,7 @@ def launch_setup(context):
         "--i2c-bus", i2c_bus,
         "--device-addr", device_addr,
         "--sample-period", sample_period,
+        "--odr-hz", odr_hz,
         ["--axis-map=", axis_map],
         "--publish-orientation",
     ]
@@ -87,7 +89,8 @@ def generate_launch_description():
         DeclareLaunchArgument("frame_id", default_value="imu_link"),
         DeclareLaunchArgument("i2c_bus", default_value="4"),
         DeclareLaunchArgument("device_addr", default_value="0x6A"),
-        DeclareLaunchArgument("sample_period", default_value="0.08"),
+        DeclareLaunchArgument("sample_period", default_value="0.005"),
+        DeclareLaunchArgument("odr_hz", default_value="208"),
         DeclareLaunchArgument(
             "axis_map",
             default_value="-y,-x,-z",

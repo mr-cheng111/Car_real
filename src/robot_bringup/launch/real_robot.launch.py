@@ -28,6 +28,7 @@ def generate_launch_description():
     lidar_serial_port = LaunchConfiguration('lidar_serial_port')
     lidar_frame = LaunchConfiguration('lidar_frame')
     imu_frame = LaunchConfiguration('imu_frame')
+    imu_odr_hz = LaunchConfiguration('imu_odr_hz')
     cmd_vel_topic = LaunchConfiguration('cmd_vel_topic')
     base_frame = LaunchConfiguration('base_frame')
     odom_frame = LaunchConfiguration('odom_frame')
@@ -69,6 +70,7 @@ def generate_launch_description():
             'i2c_bus': LaunchConfiguration('imu_i2c_bus'),
             'device_addr': LaunchConfiguration('imu_device_addr'),
             'sample_period': LaunchConfiguration('imu_sample_period'),
+            'odr_hz': imu_odr_hz,
             'axis_map': LaunchConfiguration('imu_axis_map'),
             'print_debug': LaunchConfiguration('imu_print_debug'),
         }.items(),
@@ -279,7 +281,8 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument('imu_i2c_bus', default_value='4'),
         DeclareLaunchArgument('imu_device_addr', default_value='0x6A'),
-        DeclareLaunchArgument('imu_sample_period', default_value='0.08'),
+        DeclareLaunchArgument('imu_sample_period', default_value='0.005'),
+        DeclareLaunchArgument('imu_odr_hz', default_value='208'),
         DeclareLaunchArgument('imu_axis_map', default_value='-y,-x,-z'),
         DeclareLaunchArgument('imu_print_debug', default_value='true'),
         robot_description_launch,

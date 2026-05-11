@@ -232,7 +232,9 @@ C1 雷达硬件
 - `map_resolution`：Cartographer occupancy grid 分辨率，默认 `0.05`。
 - `imu_i2c_bus`：外部 IMU I2C bus，默认 `4`。
 - `imu_device_addr`：外部 IMU 地址，默认 `0x6A`。
-- `imu_axis_map`：IMU 轴映射，默认 `y,-x,z`。
+- `imu_sample_period`：IMU 软件读取周期，默认 `0.005s`，约 `200Hz`。
+- `imu_odr_hz`：ASM330LHH 硬件输出数据率，默认 `208Hz`。
+- `imu_axis_map`：IMU 轴映射，默认 `-y,-x,-z`。
 
 查看完整参数：
 

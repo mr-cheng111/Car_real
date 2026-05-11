@@ -129,8 +129,8 @@ class RosRobotController(Node):
 
         # ROS convention: angular.z > 0 turns left (CCW).
         # Hardware mapping: ID1 is right wheel forward-positive, ID2 is left wheel reverse-positive.
-        left_linear = linear_speed + angular_speed * self.wheel_track / 2.0
-        right_linear = linear_speed - angular_speed * self.wheel_track / 2.0
+        left_linear = linear_speed - angular_speed * self.wheel_track / 2.0
+        right_linear = linear_speed + angular_speed * self.wheel_track / 2.0
 
         right_motor = self._linear_speed_to_motor_speed(right_linear)
         left_motor = -self._linear_speed_to_motor_speed(left_linear)

@@ -6,9 +6,25 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+from pathlib import Path
 
 import rclpy
 from cartographer_ros_msgs.srv import WriteState
+
+
+def workspace_root() -> Path:
+    current = Path(__file__).resolve()
+    for parent in current.parents:
+        if (parent / "src" / "car_nav2").exists():
+            return parent
+    return Path.cwd()
+
+
+def resolve_workspace_path(path: str) -> str:
+    expanded = Path(os.path.expanduser(path))
+    if expanded.is_absolute():
+        return str(expanded)
+    return str(workspace_root() / expanded)
 
 
 def main() -> int:
@@ -27,7 +43,7 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    output = os.path.abspath(os.path.expanduser(args.output))
+    output = resolve_workspace_path(args.output)
     os.makedirs(os.path.dirname(output), exist_ok=True)
 
     rclpy.init(args=None)

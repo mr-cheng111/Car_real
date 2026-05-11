@@ -53,10 +53,10 @@ ros2 launch robot_bringup mapping.launch.py
 
 建图链路会启动雷达、IMU、底盘控制、RF2O、EKF、Cartographer 和 RViz。建图时可以用键盘遥控小车移动。
 
-建图完成后，用 demo stop 保存 Cartographer `.pbstream`，不要直接 Ctrl-C：
+建图完成后，先保存 Cartographer `.pbstream`，再关闭建图：
 
 ```bash
-python3 src/demo/controller_cli.py stop
+python3 src/demo/controller_cli.py save-map
 ```
 
 保存结果：
@@ -69,8 +69,16 @@ ls -lh src/car_nav2/maps/cartographer/latest.pbstream
 
 ```bash
 ROBOT_BRINGUP_PBSTREAM_PATH=src/car_nav2/maps/cartographer/my_map.pbstream \
+python3 src/demo/controller_cli.py save-map
+```
+
+如果建图是用 `python3 src/demo/controller_cli.py mapping` 启动的，也可以直接：
+
+```bash
 python3 src/demo/controller_cli.py stop
 ```
+
+`stop` 会先保存 `.pbstream`，再关闭建图进程。手动 `ros2 launch` 启动建图时，必须用 `save-map` 显式保存。
 
 ## 3. 单独启动导航
 

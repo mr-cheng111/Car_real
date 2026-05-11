@@ -182,6 +182,7 @@ def _execute_action(
         "navigation",
         "goal",
         "goal-name",
+        "save-map",
         "wait",
         "stop",
         "status",
@@ -243,6 +244,11 @@ def _execute_action(
                 print("navigation started")
         else:
             print("navigation start failed")
+        _print_status(flow)
+        return 0 if ok else 1
+
+    if action == "save-map":
+        ok = flow.mapping.save_pbstream(timeout_sec=args.save_timeout)
         _print_status(flow)
         return 0 if ok else 1
 
@@ -344,6 +350,7 @@ def main() -> int:
         nargs="?",
         help=(
             "mapping|navigation|goal|wait|stop|status|points|delete-point|goal-name "
+            "save-map "
             "or directly provide a point name to navigate"
         ),
     )
@@ -388,6 +395,12 @@ def main() -> int:
         type=float,
         default=3.0,
         help="Wait timeout (sec) for wait action cancel request",
+    )
+    parser.add_argument(
+        "--save-timeout",
+        type=float,
+        default=25.0,
+        help="Wait timeout (sec) for Cartographer pbstream save",
     )
     parser.add_argument(
         "--rviz",

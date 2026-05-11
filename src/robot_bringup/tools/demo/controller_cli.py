@@ -84,7 +84,17 @@ def _send_goal_by_name(flow, name: str, db_path: str, topic: str, wait: float, t
 def _execute(args: argparse.Namespace, parser: argparse.ArgumentParser, flow: ExplorationFlowController) -> int:
     action = args.action
     name = args.name
-    known = {"mapping", "navigation", "goal", "goal-name", "stop", "status", "points", "delete-point"}
+    known = {
+        "mapping",
+        "navigation",
+        "goal",
+        "goal-name",
+        "save-map",
+        "stop",
+        "status",
+        "points",
+        "delete-point",
+    }
     if not action:
         print(parser.format_usage().strip())
         return 2
@@ -102,6 +112,11 @@ def _execute(args: argparse.Namespace, parser: argparse.ArgumentParser, flow: Ex
         launch_args = {"use_rviz": "true" if args.rviz else "false"}
         ok = flow.start_navigation(launch_args=launch_args, force_restart=args.restart)
         print("navigation started" if ok else "navigation start failed")
+        _print_status(flow)
+        return 0 if ok else 1
+
+    if action == "save-map":
+        ok = flow.mapping.save_pbstream(timeout_sec=args.save_timeout)
         _print_status(flow)
         return 0 if ok else 1
 
@@ -167,6 +182,7 @@ def main() -> int:
     parser.add_argument("--wait-subscribers", type=float, default=15.0)
     parser.add_argument("--publish-times", type=int, default=3)
     parser.add_argument("--points-db", default=_default_points_db())
+    parser.add_argument("--save-timeout", type=float, default=25.0)
     parser.add_argument("--rviz", action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument("--restart", action=argparse.BooleanOptionalAction, default=True)
 

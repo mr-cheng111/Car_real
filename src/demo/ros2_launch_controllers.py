@@ -23,6 +23,7 @@ import subprocess
 import threading
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 
@@ -261,8 +262,23 @@ class MappingController(LaunchProcessController):
         for Cartographer/Nav2 map saving to finish cleanly.
     """
 
+    @staticmethod
+    def _workspace_root() -> Path:
+        current = Path(__file__).resolve()
+        for parent in current.parents:
+            if (parent / "src" / "car_nav2").exists():
+                return parent
+        return Path.cwd()
+
+    @classmethod
+    def _resolve_workspace_path(cls, path: str) -> str:
+        expanded = Path(os.path.expanduser(path))
+        if expanded.is_absolute():
+            return str(expanded)
+        return str(cls._workspace_root() / expanded)
+
     def __init__(self, log_dir: str = "./logs") -> None:
-        self.pbstream_path = os.path.abspath(
+        self.pbstream_path = self._resolve_workspace_path(
             os.environ.get(
                 "ROBOT_BRINGUP_PBSTREAM_PATH",
                 "src/car_nav2/maps/cartographer/latest.pbstream",
@@ -279,8 +295,6 @@ class MappingController(LaunchProcessController):
         )
 
     def save_pbstream(self, timeout_sec: float = 25.0) -> bool:
-        if not self.is_running():
-            return True
         try:
             result = subprocess.run(
                 [
@@ -288,21 +302,31 @@ class MappingController(LaunchProcessController):
                     "--output", self.pbstream_path,
                     "--timeout", str(max(1.0, timeout_sec)),
                 ],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
                 timeout=max(2.0, timeout_sec + 5.0),
                 check=False,
             )
             if result.returncode != 0:
-                self._last_error = f"pbstream save failed: exit {result.returncode}"
+                output = (result.stdout or "").strip()
+                detail = f": {output}" if output else ""
+                self._last_error = f"pbstream save failed: exit {result.returncode}{detail}"
+                print(self._last_error)
                 return False
+            output = (result.stdout or "").strip()
+            if output:
+                print(output)
+            print(f"pbstream saved: {self.pbstream_path}")
             return True
         except Exception as exc:
             self._last_error = f"pbstream save failed: {exc}"
+            print(self._last_error)
             return False
 
     def stop(self, timeout_sec: float = 30.0) -> bool:
-        self.save_pbstream()
+        if self.is_running():
+            self.save_pbstream()
         return super().stop(timeout_sec=timeout_sec)
 
 

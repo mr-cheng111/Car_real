@@ -538,12 +538,12 @@ class ImuCartographerNode(Node):
                 self.euler_pub.publish(euler_msg)
 
             if self.args.print_debug:
-                accel_norm = math.sqrt(sum(v * v for v in self.filtered_accel))
+                filtered_accel_norm = math.sqrt(sum(v * v for v in self.filtered_accel))
                 print(
                     f"roll={roll:8.2f} pitch={pitch:8.2f} yaw={yaw:8.2f} | "
                     f"gyro=({self.filtered_gyro[0]: .4f}, {self.filtered_gyro[1]: .4f}, {self.filtered_gyro[2]: .4f}) rad/s | "
                     f"accel=({self.filtered_accel[0]: .3f}, {self.filtered_accel[1]: .3f}, {self.filtered_accel[2]: .3f}) "
-                    f"| |a|={accel_norm:.3f}",
+                    f"| |a|={filtered_accel_norm:.3f}",
                     end="\r",
                     flush=True,
                 )
@@ -603,12 +603,12 @@ def print_only_loop(args):
                 dt,
             )
             roll, pitch, yaw = ahrs.euler_deg()
-            accel_norm = math.sqrt(sum(v * v for v in filtered_accel))
+            filtered_accel_norm = math.sqrt(sum(v * v for v in filtered_accel))
             print(
                 f"roll={roll:8.2f} pitch={pitch:8.2f} yaw={yaw:8.2f} | "
                 f"gyro=({filtered_gyro[0]: .4f}, {filtered_gyro[1]: .4f}, {filtered_gyro[2]: .4f}) rad/s | "
                 f"accel=({filtered_accel[0]: .3f}, {filtered_accel[1]: .3f}, {filtered_accel[2]: .3f}) m/s^2 | "
-                f"|a|={accel_norm:.3f}",
+                f"|a|={filtered_accel_norm:.3f}",
                 end="\r",
                 flush=True,
             )
@@ -626,7 +626,7 @@ def diagnose_loop(args):
             if args.wait_data_ready:
                 imu.wait_data_ready(args.data_ready_timeout_sec)
             gyro_sensor, accel_sensor = imu.read_sensor_units()
-            accel_norm = math.sqrt(sum(v * v for v in accel_sensor))
+            raw_accel_norm = math.sqrt(sum(v * v for v in accel_sensor))
             valid = is_valid_sample(
                 gyro_sensor,
                 accel_sensor,
@@ -637,7 +637,7 @@ def diagnose_loop(args):
             print(
                 f"gyro_sensor=({gyro_sensor[0]: .5f}, {gyro_sensor[1]: .5f}, {gyro_sensor[2]: .5f}) rad/s | "
                 f"accel_sensor=({accel_sensor[0]: .5f}, {accel_sensor[1]: .5f}, {accel_sensor[2]: .5f}) m/s^2 | "
-                f"|a|={accel_norm:.5f} | valid={valid}",
+                f"|a|={raw_accel_norm:.5f} | valid={valid}",
                 flush=True,
             )
             time.sleep(args.sample_period)

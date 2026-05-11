@@ -11,10 +11,13 @@
 
   <exec_depend>controller</exec_depend>
   <exec_depend>action_msgs</exec_depend>
+  <exec_depend>car_nav2</exec_depend>
   <exec_depend>cartographer_ros</exec_depend>
+  <exec_depend>exploration</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>imu_cartographer_publisher</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>nav2_bringup</exec_depend>
   <exec_depend>rclpy</exec_depend>
   <exec_depend>peripherals</exec_depend>
   <exec_depend>rf2o_laser_odometry</exec_depend>
@@ -22,6 +25,7 @@
   <exec_depend>robot_localization</exec_depend>
   <exec_depend>ros_robot_controller</exec_depend>
   <exec_depend>rplidar_ros</exec_depend>
+  <exec_depend>rviz2</exec_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

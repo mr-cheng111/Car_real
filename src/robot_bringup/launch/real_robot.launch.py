@@ -2,7 +2,7 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, TimerAction
 from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
@@ -11,13 +11,19 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     bringup_share = get_package_share_directory('robot_bringup')
+    car_nav2_share = get_package_share_directory('car_nav2')
     controller_share = get_package_share_directory('controller')
+    exploration_share = get_package_share_directory('exploration')
     imu_share = get_package_share_directory('imu_cartographer_publisher')
+    nav2_bringup_share = get_package_share_directory('nav2_bringup')
     robot_description_share = get_package_share_directory('robot_description')
     rplidar_share = get_package_share_directory('rplidar_ros')
 
     use_sim_time = LaunchConfiguration('use_sim_time')
     enable_teleop = LaunchConfiguration('enable_teleop')
+    use_rviz = LaunchConfiguration('use_rviz')
+    enable_auto_navigation = LaunchConfiguration('enable_auto_navigation')
+    enable_frontier_exploration = LaunchConfiguration('enable_frontier_exploration')
     use_rf2o_in_ekf = LaunchConfiguration('use_rf2o_in_ekf')
     lidar_serial_port = LaunchConfiguration('lidar_serial_port')
     lidar_frame = LaunchConfiguration('lidar_frame')
@@ -27,6 +33,9 @@ def generate_launch_description():
     odom_frame = LaunchConfiguration('odom_frame')
     chassis_serial_port = LaunchConfiguration('chassis_serial_port')
     chassis_baudrate = LaunchConfiguration('chassis_baudrate')
+    nav2_params = LaunchConfiguration('nav2_params')
+    explore_params = LaunchConfiguration('explore_params')
+    rviz_config = LaunchConfiguration('rviz_config')
 
     robot_description_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -181,6 +190,55 @@ def generate_launch_description():
         ],
     )
 
+    nav2_navigation = TimerAction(
+        period=8.0,
+        actions=[
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    os.path.join(nav2_bringup_share, 'launch', 'navigation_launch.py')
+                ),
+                launch_arguments={
+                    'use_sim_time': use_sim_time,
+                    'params_file': nav2_params,
+                    'autostart': 'true',
+                }.items(),
+            )
+        ],
+        condition=IfCondition(enable_auto_navigation),
+    )
+
+    frontier_explorer = TimerAction(
+        period=15.0,
+        actions=[
+            Node(
+                package='exploration',
+                executable='frontier_explorer',
+                name='frontier_explorer',
+                output='screen',
+                parameters=[
+                    explore_params,
+                    {
+                        'nav_action_name': 'navigate_to_pose',
+                        'cmd_vel_topic': cmd_vel_topic,
+                        'enable_return_home': True,
+                        'num_random_goals': 0,
+                    },
+                ],
+            )
+        ],
+        condition=IfCondition(enable_frontier_exploration),
+    )
+
+    rviz_node = Node(
+        package='rviz2',
+        executable='rviz2',
+        name='rviz2',
+        output='screen',
+        arguments=['-d', rviz_config],
+        parameters=[{'use_sim_time': use_sim_time}],
+        condition=IfCondition(use_rviz),
+    )
+
     teleop_key_node = Node(
         package='peripherals',
         executable='teleop_key_control',
@@ -193,7 +251,10 @@ def generate_launch_description():
 
     return LaunchDescription([
         DeclareLaunchArgument('use_sim_time', default_value='false'),
-        DeclareLaunchArgument('enable_teleop', default_value='true'),
+        DeclareLaunchArgument('enable_teleop', default_value='false'),
+        DeclareLaunchArgument('use_rviz', default_value='true'),
+        DeclareLaunchArgument('enable_auto_navigation', default_value='true'),
+        DeclareLaunchArgument('enable_frontier_exploration', default_value='true'),
         DeclareLaunchArgument('use_rf2o_in_ekf', default_value='true'),
         DeclareLaunchArgument('cmd_vel_topic', default_value='/cmd_vel'),
         DeclareLaunchArgument('base_frame', default_value='base_footprint'),
@@ -204,6 +265,18 @@ def generate_launch_description():
         DeclareLaunchArgument('lidar_frame', default_value='laser_link'),
         DeclareLaunchArgument('imu_frame', default_value='imu_link'),
         DeclareLaunchArgument('map_resolution', default_value='0.05'),
+        DeclareLaunchArgument(
+            'nav2_params',
+            default_value=os.path.join(car_nav2_share, 'param', 'car_nav2.yaml'),
+        ),
+        DeclareLaunchArgument(
+            'explore_params',
+            default_value=os.path.join(exploration_share, 'config', 'explore_params.yaml'),
+        ),
+        DeclareLaunchArgument(
+            'rviz_config',
+            default_value=os.path.join(bringup_share, 'config', 'default.rviz'),
+        ),
         DeclareLaunchArgument('imu_i2c_bus', default_value='4'),
         DeclareLaunchArgument('imu_device_addr', default_value='0x6A'),
         DeclareLaunchArgument('imu_sample_period', default_value='0.08'),
@@ -220,5 +293,8 @@ def generate_launch_description():
         ekf_filter_node_with_rf2o,
         cartographer_node,
         occupancy_grid_node,
+        nav2_navigation,
+        frontier_explorer,
+        rviz_node,
         teleop_key_node,
     ])

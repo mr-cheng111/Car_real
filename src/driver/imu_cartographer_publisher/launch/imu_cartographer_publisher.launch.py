@@ -28,6 +28,10 @@ def launch_setup(context):
         arguments.append('--publish-orientation')
     if LaunchConfiguration('publish_euler').perform(context).lower() in ('1', 'true', 'yes', 'on'):
         arguments.append('--publish-euler')
+    if LaunchConfiguration('euler_from_accel').perform(context).lower() in ('1', 'true', 'yes', 'on'):
+        arguments.append('--euler-from-accel')
+    if LaunchConfiguration('euler_yaw_zero').perform(context).lower() in ('1', 'true', 'yes', 'on'):
+        arguments.append('--euler-yaw-zero')
     if LaunchConfiguration('print_debug').perform(context).lower() in ('1', 'true', 'yes', 'on'):
         arguments.append('--print-debug')
 
@@ -59,6 +63,16 @@ def generate_launch_description():
             'publish_euler',
             default_value='true',
             description='Publish Mahony AHRS Euler angles in degrees as geometry_msgs/Vector3Stamped.',
+        ),
+        DeclareLaunchArgument(
+            'euler_from_accel',
+            default_value='true',
+            description='Publish Euler roll/pitch from accelerometer and yaw=0 for stable low-dynamic display.',
+        ),
+        DeclareLaunchArgument(
+            'euler_yaw_zero',
+            default_value='false',
+            description='Force Euler yaw output to 0 when not using euler_from_accel.',
         ),
         DeclareLaunchArgument(
             'axis_map',

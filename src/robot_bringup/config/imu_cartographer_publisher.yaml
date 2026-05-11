@@ -10,4 +10,6 @@ imu_cartographer_publisher:
     axis_map: -y,-x,-z
     publish_orientation: true
     publish_euler: true
+    euler_from_accel: true
+    euler_yaw_zero: false
     print_debug: true

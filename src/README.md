@@ -238,6 +238,8 @@ C1 雷达硬件
 - `imu_publish_orientation`：是否发布 Mahony AHRS 姿态四元数，默认 `true`。
 - `imu_publish_euler`：是否发布欧拉角 topic，默认 `true`。
 - `imu_euler_topic`：欧拉角 topic，默认 `/imu/euler_deg`，消息类型 `geometry_msgs/Vector3Stamped`，单位为度。
+- `imu_euler_from_accel`：欧拉角默认由加速度直接计算 roll/pitch 且 yaw=0，默认 `true`，适合静止/低动态观察。
+- `imu_euler_yaw_zero`：不使用 `imu_euler_from_accel` 时是否强制 yaw=0，默认 `false`。
 
 查看完整参数：
 

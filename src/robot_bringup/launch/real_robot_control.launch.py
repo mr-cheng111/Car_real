@@ -31,6 +31,8 @@ def generate_launch_description():
         DeclareLaunchArgument('imu_publish_orientation', default_value='true'),
         DeclareLaunchArgument('imu_publish_euler', default_value='true'),
         DeclareLaunchArgument('imu_euler_topic', default_value='/imu/euler_deg'),
+        DeclareLaunchArgument('imu_euler_from_accel', default_value='true'),
+        DeclareLaunchArgument('imu_euler_yaw_zero', default_value='false'),
         DeclareLaunchArgument('imu_print_debug', default_value='true'),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
@@ -60,6 +62,8 @@ def generate_launch_description():
                 'imu_publish_orientation': LaunchConfiguration('imu_publish_orientation'),
                 'imu_publish_euler': LaunchConfiguration('imu_publish_euler'),
                 'imu_euler_topic': LaunchConfiguration('imu_euler_topic'),
+                'imu_euler_from_accel': LaunchConfiguration('imu_euler_from_accel'),
+                'imu_euler_yaw_zero': LaunchConfiguration('imu_euler_yaw_zero'),
                 'imu_print_debug': LaunchConfiguration('imu_print_debug'),
             }.items(),
         ),

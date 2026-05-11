@@ -75,6 +75,41 @@ class MahonyAHRS:
         self.q = [1.0, 0.0, 0.0, 0.0]
         self.e_int = [0.0, 0.0, 0.0]
 
+    def reset_from_accel(self, ax, ay, az):
+        norm = math.sqrt(ax * ax + ay * ay + az * az)
+        if norm < 1e-9:
+            return
+
+        ax /= norm
+        ay /= norm
+        az /= norm
+
+        # 静止时加速度计测到的是重力反作用方向，roll/pitch 由重力方向确定，yaw 无磁力计约束只能置 0。
+        # 公式为 ZYX 欧拉角的重力投影反解：roll=atan2(ay,az)，pitch=atan2(-ax,sqrt(ay^2+az^2))。
+        roll = math.atan2(ay, az)
+        pitch = math.atan2(-ax, math.sqrt(ay * ay + az * az))
+        self.set_euler(roll, pitch, 0.0)
+        self.e_int = [0.0, 0.0, 0.0]
+
+    def set_euler(self, roll, pitch, yaw):
+        half_roll = 0.5 * roll
+        half_pitch = 0.5 * pitch
+        half_yaw = 0.5 * yaw
+        cr = math.cos(half_roll)
+        sr = math.sin(half_roll)
+        cp = math.cos(half_pitch)
+        sp = math.sin(half_pitch)
+        cy = math.cos(half_yaw)
+        sy = math.sin(half_yaw)
+
+        # ZYX 顺序欧拉角转四元数，q=[w,x,y,z]。
+        self.q = [
+            cr * cp * cy + sr * sp * sy,
+            sr * cp * cy - cr * sp * sy,
+            cr * sp * cy + sr * cp * sy,
+            cr * cp * sy - sr * sp * cy,
+        ]
+
     def update(self, gx, gy, gz, ax, ay, az, dt):
         if dt <= 0.0:
             return
@@ -123,6 +158,18 @@ class MahonyAHRS:
     def quaternion_xyzw(self):
         q0, q1, q2, q3 = self.q
         return q1, q2, q3, q0
+
+    @staticmethod
+    def accel_euler_deg(ax, ay, az):
+        norm = math.sqrt(ax * ax + ay * ay + az * az)
+        if norm < 1e-9:
+            return 0.0, 0.0, 0.0
+        ax /= norm
+        ay /= norm
+        az /= norm
+        roll = math.atan2(ay, az)
+        pitch = math.atan2(-ax, math.sqrt(ay * ay + az * az))
+        return math.degrees(roll), math.degrees(pitch), 0.0
 
     def euler_deg(self):
         q0, q1, q2, q3 = self.q
@@ -299,6 +346,26 @@ def calibrate_gyro(imu, samples, sample_period, wait_sec, max_abs_rad_s):
     return bias, valid
 
 
+def average_accel(imu, samples, sample_period):
+    sums = [0.0, 0.0, 0.0]
+    valid = 0
+    for _ in range(samples):
+        try:
+            _, accel = imu.read_sensor_units()
+            sums[0] += accel[0]
+            sums[1] += accel[1]
+            sums[2] += accel[2]
+            valid += 1
+        except Exception as exc:
+            print(f"加速度初始化采样失败: {exc}", file=sys.stderr)
+        time.sleep(sample_period)
+
+    if valid == 0:
+        return None
+
+    return (sums[0] / valid, sums[1] / valid, sums[2] / valid)
+
+
 class ImuCartographerNode(Node):
     def __init__(self, args):
         super().__init__("imu_cartographer_publisher")
@@ -316,6 +383,14 @@ class ImuCartographerNode(Node):
         )
 
         self.ahrs = MahonyAHRS(args.mahony_kp, args.mahony_ki)
+        accel_init = average_accel(self.imu, args.initial_accel_samples, args.sample_period)
+        if accel_init is not None:
+            accel_robot_init = map_vec(accel_init, self.mapping)
+            self.ahrs.reset_from_accel(*accel_robot_init)
+            roll, pitch, yaw = self.ahrs.euler_deg()
+            self.get_logger().info(
+                f"initialized IMU roll/pitch from accel: roll={roll:.2f}deg, pitch={pitch:.2f}deg, yaw={yaw:.2f}deg"
+            )
         self.pub = self.create_publisher(Imu, args.topic, 20)
         self.euler_pub = (
             self.create_publisher(Vector3Stamped, args.euler_topic, 20)
@@ -400,6 +475,14 @@ class ImuCartographerNode(Node):
 
             self.pub.publish(msg)
             roll, pitch, yaw = self.ahrs.euler_deg()
+            if self.args.euler_from_accel:
+                roll, pitch, yaw = MahonyAHRS.accel_euler_deg(
+                    self.filtered_accel[0],
+                    self.filtered_accel[1],
+                    self.filtered_accel[2],
+                )
+            elif self.args.euler_yaw_zero:
+                yaw = 0.0
 
             if self.euler_pub is not None:
                 euler_msg = Vector3Stamped()
@@ -542,6 +625,17 @@ def build_arg_parser():
         "--publish-orientation",
         action="store_true",
         help="Publish Mahony orientation. Leave disabled for Cartographer to avoid feeding drifting yaw.",
+    )
+    parser.add_argument("--initial-accel-samples", type=int, default=50)
+    parser.add_argument(
+        "--euler-from-accel",
+        action="store_true",
+        help="Publish Euler roll/pitch directly from accelerometer and force yaw to 0.",
+    )
+    parser.add_argument(
+        "--euler-yaw-zero",
+        action="store_true",
+        help="Force Euler yaw output to 0 because ASM330LHH has no magnetometer yaw reference.",
     )
     parser.add_argument("--print-debug", action="store_true")
     parser.add_argument("--publish-euler", action="store_true", help="Publish Euler angles as geometry_msgs/Vector3Stamped in degrees.")

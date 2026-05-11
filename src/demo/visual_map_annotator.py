@@ -30,7 +30,7 @@ import numpy as np
 from ros2_launch_controllers import ExplorationFlowController
 
 
-DEFAULT_MAP = "/home/mr-cheng/Car_real/src/exploration/map/exploration_map.yaml"
+DEFAULT_MAP = "src/exploration/map/exploration_map.yaml"
 DEFAULT_DB = Path(__file__).resolve().parent / "named_points.json"
 DEFAULT_LOG_DIR = Path(__file__).resolve().parent / "logs"
 

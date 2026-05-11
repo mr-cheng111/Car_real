@@ -104,7 +104,7 @@ class FrontierExplorer(Node):
         self.declare_parameter('no_frontier_threshold', 5)   # consecutive empty checks
         self.declare_parameter('min_explored_cells', 100)    # don't finish if map too small
         self.declare_parameter('enable_return_home', True)
-        self.declare_parameter('map_save_path', '~/order_exploration/src/exploration/map/exploration_map')
+        self.declare_parameter('map_save_path', 'src/exploration/map/exploration_map')
         self.declare_parameter('map_cache_save_interval', 2.0)
 
         # Startup map seeding motion

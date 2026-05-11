@@ -34,7 +34,7 @@ def _default_log_dir() -> str:
 
 
 def _default_map_yaml() -> str:
-    return "/home/mr-cheng/Car_real/src/exploration/map/exploration_map.yaml"
+    return "src/exploration/map/exploration_map.yaml"
 
 
 def _load_named_points(db_path: str) -> Dict[str, Dict[str, Any]]:

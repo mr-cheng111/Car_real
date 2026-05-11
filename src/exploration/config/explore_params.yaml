@@ -33,7 +33,7 @@ frontier_explorer:
     no_frontier_threshold: 5      # Declare done after N consecutive empty frontier checks
     min_explored_cells: 100       # Don't declare done if map has fewer free cells
     enable_return_home: true
-    map_save_path: "/home/mr-cheng/Car_real/src/exploration/map/exploration_map"
+    map_save_path: "src/exploration/map/exploration_map"
 
     # ────────── Startup Seed Motion ──────────
     allow_initial_spin: false      # Disable startup in-place rotation

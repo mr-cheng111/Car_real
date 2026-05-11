@@ -11,11 +11,12 @@ from launch_ros.actions import Node, SetParameter
 def generate_launch_description():
     package_name = 'robot_description'
     pkg_share = get_package_share_directory(package_name)
+    bringup_share = get_package_share_directory('robot_bringup')
     use_sim_time = LaunchConfiguration('use_sim_time')
 
     urdf_file = os.path.join(pkg_share, 'urdf', 'robot_gazebo.urdf')
     world_file = os.path.join(pkg_share, 'world', 'sim.world')
-    ekf_config = os.path.join(pkg_share, 'config', 'ekf.yaml')
+    ekf_config = os.path.join(bringup_share, 'config', 'ekf.yaml')
 
     with open(urdf_file, 'r', encoding='utf-8') as f:
         robot_description_content = f.read()

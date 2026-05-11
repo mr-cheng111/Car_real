@@ -12,12 +12,13 @@ from launch_ros.actions import Node, SetParameter
 def generate_launch_description():
     car_nav2_dir = get_package_share_directory('car_nav2')
     nav2_bringup_dir = get_package_share_directory('nav2_bringup')
+    robot_bringup_dir = get_package_share_directory('robot_bringup')
     robot_description_dir = get_package_share_directory('robot_description')
 
     urdf_path = os.path.join(robot_description_dir, 'urdf', 'robot_gazebo.urdf')
     world_path = os.path.join(robot_description_dir, 'world', 'sim.world')
-    ekf_path = os.path.join(robot_description_dir, 'config', 'ekf.yaml')
-    rviz_config_path = os.path.join(robot_description_dir, 'config', 'default.rviz')
+    ekf_path = os.path.join(robot_bringup_dir, 'config', 'ekf.yaml')
+    rviz_config_path = os.path.join(robot_bringup_dir, 'config', 'default.rviz')
 
     with open(urdf_path, 'r', encoding='utf-8') as f:
         robot_description_content = f.read()
@@ -108,7 +109,7 @@ def generate_launch_description():
             'laser_scan_topic': '/scan',
             'odom_topic': '/odom_rf2o',
             'publish_tf': False,
-            'base_frame_id': 'base_link',
+            'base_frame_id': 'base_footprint',
             'odom_frame_id': 'odom',
             'init_pose_from_topic': '',
             'init_pose_from_imu_topic': '/imu',

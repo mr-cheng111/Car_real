@@ -1,0 +1,52 @@
+# Frontier Explorer parameters
+
+frontier_explorer:
+  ros__parameters:
+    # ────────── Frontier Detection ──────────
+    min_frontier_size: 5          # Minimum cells per frontier cluster
+    robot_radius: 0.22            # Safety clearance from obstacles (meters)
+    min_frontier_dist: 0.3        # Ignore frontiers closer than this (meters)
+
+    # ────────── Frontier Scoring ──────────
+    # score = gain_weight * log(1 + size) - cost_weight * distance - heading penalties
+    cost_weight: 1.0
+    gain_weight: 1.5
+    heading_weight: 1.2          # Penalize large heading changes when choosing a frontier
+    u_turn_penalty: 2.0          # Extra penalty for frontiers that require near-U-turns
+    u_turn_angle: 1.8            # Heading error threshold (rad) treated as a U-turn
+    preferred_heading_limit: 1.2 # Prefer frontiers roughly within the front hemisphere
+    hard_heading_limit: 1.75     # Reject more aggressive turn-around goals unless no alternative
+
+    # ────────── Blacklist ──────────
+    blacklist_radius: 0.6         # Reject frontiers near blacklisted ones (m)
+    blacklist_clear_interval: 120.0  # Auto-clear blacklist after this many seconds
+
+    # ────────── Navigation ──────────
+    goal_timeout: 90.0            # Give up on a goal after this many seconds
+    replan_interval: 1.5          # Re-evaluate frontiers every N seconds while navigating
+    post_goal_pause: 0.3          # Pause after reaching a goal (s)
+    enable_rescue_goals: true     # Try short detour goals after a navigation failure
+    rescue_goal_radius: 0.6       # Radius of detour goals around robot (m)
+    max_rescue_goals: 4           # Max detour goals queued after a failure
+
+    # ────────── Completion ──────────
+    no_frontier_threshold: 5      # Declare done after N consecutive empty frontier checks
+    min_explored_cells: 100       # Don't declare done if map has fewer free cells
+    enable_return_home: true
+    map_save_path: "/home/mr-cheng/Car_sim/src/exploration/map/exploration_map"
+
+    # ────────── Startup Seed Motion ──────────
+    allow_initial_spin: false      # Disable startup in-place rotation
+    initial_spin_duration: 8.0     # Only used when allow_initial_spin is true
+    spin_angular_vel: 0.8          # Only used when allow_initial_spin is true
+    allow_initial_forward: true    # Move forward briefly to seed first scans
+    initial_forward_duration: 1.5  # seconds
+    initial_forward_vel: 0.08      # m/s
+
+    # ────────── Multi-cycle ──────────
+    num_cycles: 1                 # Number of exploration cycles (override in test launch)
+    num_random_goals: 5           # Random waypoints per cycle after exploration
+
+    # ────────── ROS Interface ──────────
+    nav_action_name: "navigate_to_pose"
+    cmd_vel_topic: "/cmd_vel"

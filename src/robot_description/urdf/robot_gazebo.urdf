@@ -1,47 +1,36 @@
 <?xml version="1.0"?>
 <robot name="robot">
 
+  <link name="base_footprint"/>
+
+  <joint name="base_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 0.05" rpy="0 0 0"/>
+  </joint>
 
   <link name="base_link">
     <visual>
-      <origin xyz="0 0 0.05" rpy="0 0 0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <box size="0.16 0.20 0.10"/>
-      </geometry>
-      <material name="blue">
-      	<color rgba = "0.1 0.1 1.0 0.5"/>
-      </material>
-    </visual>
-    <visual>
-      <origin xyz="0.14 0 0.05" rpy="0 0 0"/>
-      <geometry>
-        <box size="0.12 0.08 0.10"/>
+        <box size="0.25 0.22 0.10"/>
       </geometry>
       <material name="blue">
       	<color rgba = "0.1 0.1 1.0 0.5"/>
       </material>
     </visual>
     <collision>
-      <origin xyz="0 0 0.05" rpy="0 0 0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <box size="0.16 0.20 0.10"/>
-      </geometry>
-      <material name="blue">
-          <color rgba="0.1 0.1 1.0 0.5" /> 
-      </material>
-    </collision>
-    <collision>
-      <origin xyz="0.14 0 0.05" rpy="0 0 0"/>
-      <geometry>
-        <box size="0.12 0.08 0.10"/>
+        <box size="0.25 0.22 0.10"/>
       </geometry>
       <material name="blue">
           <color rgba="0.1 0.1 1.0 0.5" /> 
       </material>
     </collision>
     <inertial>
-      <mass value="0.2"/>
-      <inertia ixx="0.00019333333" ixy="0" ixz="0" iyy="0.00033333333" iyz="0" izz="0.00019333333"/>
+      <mass value="2.0"/>
+      <inertia ixx="0.0108166667" ixy="0" ixz="0" iyy="0.0120833333" iyz="0" izz="0.01815"/>
     </inertial>
   </link>
     
@@ -75,14 +64,14 @@
     <joint name="laser_joint" type="fixed">
         <parent link="base_link" />
         <child link="laser_link" />
-        <origin xyz="0.10 0 0.285" rpy="0 0 0"/>
+        <origin xyz="0 0 0.15" rpy="0 0 0"/>
     </joint>
     
-  <link name="left_wheel_link">
+  <link name="left_wheel">
       <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <cylinder length="0.025" radius="0.035"/>
+        <cylinder length="0.03" radius="0.05"/>
       </geometry>
       <material name="yellow">
           <color rgba="1.0 1.0 0.0 0.8" /> 
@@ -91,33 +80,33 @@
     <collision>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
-          <cylinder length="0.025" radius="0.035"/>
+          <cylinder length="0.03" radius="0.05"/>
         </geometry>
         <material name="black">
           <color rgba="0.0 0.0 0.0 0.5" /> 
         </material>
      </collision>
      <inertial>
-       <mass value="0.02"/>
-       <inertia ixx="0.00000278" ixy="0" ixz="0" iyy="0.00000278" iyz="0" izz="0.00000004"/>
+       <mass value="0.15"/>
+       <inertia ixx="0.000042375" ixy="0" ixz="0" iyy="0.000042375" iyz="0" izz="0.0001875"/>
      </inertial>
   </link>
 
   <!-- left wheel joint -->
     <joint name="left_wheel_joint" type="continuous">
         <parent link="base_link" />
-        <child link="left_wheel_link" />
-        <origin xyz="0 0.15 0.0" rpy="1.57079 0 0"/>
-        <axis xyz="0 0 -1" />
+        <child link="left_wheel" />
+        <origin xyz="0 0.1474 0" rpy="-1.5707963267948966 0 0"/>
+        <axis xyz="0 0 1" />
         <dynamics damping="0.5" friction="0.1" />
     </joint>
 
 
-  <link name="right_wheel_link">
+  <link name="right_wheel">
       <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <cylinder length="0.025" radius="0.035"/>
+        <cylinder length="0.03" radius="0.05"/>
       </geometry>
       <material name="yellow">
           <color rgba="1.0 1.0 0.0 0.8" /> 
@@ -126,31 +115,31 @@
     <collision>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
-          <cylinder length="0.025" radius="0.035"/>
+          <cylinder length="0.03" radius="0.05"/>
         </geometry>
         <material name="black">
           <color rgba="0.0 0.0 0.0 0.5" /> 
         </material>
      </collision>
      <inertial>
-       <mass value="0.02"/>
-       <inertia ixx="0.00000278" ixy="0" ixz="0" iyy="0.00000278" iyz="0" izz="0.00000004"/>
+       <mass value="0.15"/>
+       <inertia ixx="0.000042375" ixy="0" ixz="0" iyy="0.000042375" iyz="0" izz="0.0001875"/>
      </inertial>
   </link>
 <!-- right wheel joint -->
     <joint name="right_wheel_joint" type="continuous">
         <parent link="base_link" />
-        <child link="right_wheel_link" />
-        <origin xyz="0 -0.15 0.0" rpy="1.57079 0 0"/>
-        <axis xyz="0 0 -1" />
+        <child link="right_wheel" />
+        <origin xyz="0 -0.1474 0" rpy="-1.5707963267948966 0 0"/>
+        <axis xyz="0 0 1" />
         <dynamics damping="0.5" friction="0.1" />
     </joint> 
 
-  <link name="front_boll_link">
+  <link name="caster_wheel">
       <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-      	<sphere radius="0.02"/>
+      	<sphere radius="0.015"/>
       </geometry>
       <material name="green">
           <color rgba="0.0 1.0 0.0 0.8" /> 
@@ -159,24 +148,24 @@
     <collision>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
-          <sphere radius="0.02"/>
+          <sphere radius="0.015"/>
         </geometry>
         <material name="black">
           <color rgba="0.0 0.0 0.0 0.5" /> 
         </material>
     </collision>
   </link>
-  <gazebo reference="front_boll_link">
+  <gazebo reference="caster_wheel">
     <mu1 value="0.0"/>
     <mu2 value="0.0"/>
     <kp value="1000000.0" />
     <kd value="10.0" />
   </gazebo>
 <!-- front boll joint -->
-    <joint name="front_boll_joint" type="fixed">
+    <joint name="caster_wheel_joint" type="fixed">
         <parent link="base_link" />
-        <child link="front_boll_link" />
-        <origin xyz="0.18 0 -0.015" />
+        <child link="caster_wheel" />
+        <origin xyz="-0.12 0 -0.035" rpy="0 0 0"/>
     </joint>
 
   <link name="imu_link">
@@ -191,7 +180,7 @@
   <joint name="imu_joint" type="fixed">
     <parent link="base_link" />
     <child link="imu_link" />
-    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <origin xyz="-0.1357881 0.0051315 0.0907072" rpy="3.1415926535897931 0 -1.5707963267948966"/>
   </joint>
   
   
@@ -311,8 +300,8 @@
           <left_joint>left_wheel_joint</left_joint>
           <right_joint>right_wheel_joint</right_joint>
           <!-- kinematics -->
-          <wheel_separation>0.3</wheel_separation>
-          <wheel_diameter>0.07</wheel_diameter>
+          <wheel_separation>0.2948</wheel_separation>
+          <wheel_diameter>0.10</wheel_diameter>
           <!-- limits -->
           <max_wheel_torque>20</max_wheel_torque>
           <max_wheel_acceleration>1.0</max_wheel_acceleration>
@@ -322,7 +311,7 @@
           <publish_wheel_tf>true</publish_wheel_tf>
           <odometry_topic>odom_raw</odometry_topic>
           <odometry_frame>odom</odometry_frame>
-          <robot_base_frame>base_link</robot_base_frame>
+          <robot_base_frame>base_footprint</robot_base_frame>
 	</plugin>
  </gazebo>
 

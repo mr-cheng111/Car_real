@@ -14,6 +14,7 @@ def generate_launch_description():
     urdf_name = 'robot_gazebo.urdf'
 
     pkg_share = get_package_share_directory(package_name)
+    bringup_share = get_package_share_directory('robot_bringup')
     urdf_model_path = os.path.join(pkg_share, f'urdf/{urdf_name}')
     use_sim_time = LaunchConfiguration('use_sim_time')
     enable_rf2o = LaunchConfiguration('enable_rf2o')
@@ -30,7 +31,7 @@ def generate_launch_description():
             'laser_scan_topic': '/scan',
             'odom_topic': '/odom_rf2o',
             'publish_tf': rf2o_publish_tf,
-            'base_frame_id': 'base_link',
+            'base_frame_id': 'base_footprint',
             'odom_frame_id': 'odom',
             'init_pose_from_topic': '',
             'init_pose_from_imu_topic': '/imu',
@@ -106,7 +107,7 @@ def generate_launch_description():
         output='screen',
         remappings=[('/odometry/filtered', '/odom')],
         parameters=[
-            os.path.join(pkg_share, 'config/ekf.yaml'),
+            os.path.join(bringup_share, 'config', 'ekf.yaml'),
             {'use_sim_time': use_sim_time},
         ],
     )
@@ -141,7 +142,7 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'rf2o_publish_tf',
             default_value='false',
-            description='Whether rf2o should publish odom->base_link TF',
+            description='Whether rf2o should publish odom->base_footprint TF',
         ),
         LogInfo(msg='Using Gazebo Classic pipeline'),
         set_use_sim_time,

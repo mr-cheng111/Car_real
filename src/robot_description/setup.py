@@ -14,7 +14,6 @@ setup(
         ('share/' + package_name + '/sdf', glob('sdf/*')),
         ('share/' + package_name + '/meshes', glob('meshes/*')),
         ('share/' + package_name + '/world', ['robot_description/world/sim.world']),
-        ('share/' + package_name + '/config', glob('config/*')),
         ('share/' + package_name + '/launch', glob('launch/*.py')),
         ('share/' + package_name + '/rviz', glob('rviz/*')),
     ],

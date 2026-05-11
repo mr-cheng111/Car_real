@@ -1,0 +1,9 @@
+imu_cartographer_publisher:
+  ros__parameters:
+    topic: /imu
+    frame_id: imu_link
+    i2c_bus: 4
+    device_addr: 0x6A
+    sample_period: 0.08
+    axis_map: y,-x,z
+    print_debug: true

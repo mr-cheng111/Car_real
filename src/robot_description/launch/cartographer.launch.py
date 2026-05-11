@@ -8,9 +8,9 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    robot_description_dir = get_package_share_directory('robot_description')
+    robot_bringup_dir = get_package_share_directory('robot_bringup')
     use_sim_time = LaunchConfiguration('use_sim_time')
-    configuration_directory = os.path.join(robot_description_dir, 'config')
+    configuration_directory = os.path.join(robot_bringup_dir, 'config')
     configuration_basename = 'cartographer_2d.lua'
 
     cartographer_node = Node(

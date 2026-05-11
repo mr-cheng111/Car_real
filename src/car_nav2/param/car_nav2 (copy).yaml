@@ -18,7 +18,7 @@ amcl:
     # 额外漂移噪声参数5
     alpha5: 0.2
     # 机器人基座坐标系
-    base_frame_id: "base_link"
+    base_frame_id: "base_footprint"
     # 启用beam跳过时的最小距离阈值
     beam_skip_distance: 0.5
     # beam跳过错误占比阈值
@@ -113,7 +113,7 @@ bt_navigator:
     # 全局坐标系
     global_frame: map
     # 机器人基座坐标系
-    robot_base_frame: base_link
+    robot_base_frame: base_footprint
     # 里程计话题
     odom_topic: /odom
     # 行为树循环周期（ms）
@@ -354,7 +354,7 @@ local_costmap:
       # 局部代价地图所在全局坐标系
       global_frame: odom
       # 机器人基座坐标系
-      robot_base_frame: base_link
+      robot_base_frame: base_footprint
       # 是否使用仿真时间
       use_sim_time: True
       # 是否使用滚动窗口
@@ -437,7 +437,7 @@ global_costmap:
       # 全局坐标系
       global_frame: map
       # 机器人基座坐标系
-      robot_base_frame: base_link
+      robot_base_frame: base_footprint
       # 是否使用仿真时间
       use_sim_time: True
       # 机器人半径（米）
@@ -584,7 +584,7 @@ behavior_server:
     # 行为服务器所在全局坐标系
     global_frame: odom
     # 机器人基座坐标系
-    robot_base_frame: base_link
+    robot_base_frame: base_footprint
     # TF容忍时间（秒）
     transform_tolerance: 0.1
     # 是否使用仿真时间

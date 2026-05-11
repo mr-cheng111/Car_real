@@ -150,6 +150,7 @@ def generate_launch_description():
         parameters=[
             os.path.join(bringup_share, 'config', 'ekf_external_imu.yaml'),
             {'use_sim_time': use_sim_time},
+            {'publish_tf': True},
         ],
         remappings=[('odometry/filtered', '/odom')],
         condition=UnlessCondition(use_rf2o_in_ekf),
@@ -163,6 +164,7 @@ def generate_launch_description():
         parameters=[
             os.path.join(bringup_share, 'config', 'ekf_external_imu_rf2o.yaml'),
             {'use_sim_time': use_sim_time},
+            {'publish_tf': True},
         ],
         remappings=[('odometry/filtered', '/odom')],
         condition=IfCondition(use_rf2o_in_ekf),

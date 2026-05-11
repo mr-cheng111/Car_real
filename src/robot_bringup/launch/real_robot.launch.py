@@ -280,7 +280,7 @@ def generate_launch_description():
         DeclareLaunchArgument('imu_i2c_bus', default_value='4'),
         DeclareLaunchArgument('imu_device_addr', default_value='0x6A'),
         DeclareLaunchArgument('imu_sample_period', default_value='0.08'),
-        DeclareLaunchArgument('imu_axis_map', default_value='-y,x,z'),
+        DeclareLaunchArgument('imu_axis_map', default_value='x,y,z'),
         DeclareLaunchArgument('imu_print_debug', default_value='true'),
         robot_description_launch,
         c1_lidar_launch,

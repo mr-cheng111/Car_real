@@ -27,9 +27,13 @@
     imu=(-35.7881, 5.1315, -34.0128)mm
     wheel_mid=(100, 0, -124.72)mm
     imu-base = (-135.7881, 5.1315, 90.7072)mm
-    IMU frame orientation matches the sensor mounting:
-    yaw=-90deg plus roll=180deg, so sensor_z points opposite base_link_z.
-    This corresponds to imu_cartographer_publisher axis_map=-y,-x,-z.
+    IMU frame orientation matches the current sensor mounting:
+    only yaw=-90deg relative to base_link.
+    坐标变换关系为：
+    x_base =  y_imu
+    y_base = -x_imu
+    z_base =  z_imu
+    因此对应 imu_cartographer_publisher 的 axis_map=y,-x,z。
   -->
   <xacro:property name="imu_x" value="-0.1357881"/>
   <xacro:property name="imu_y" value="0.0051315"/>
@@ -221,7 +225,7 @@
   <joint name="imu_joint" type="fixed">
     <parent link="base_link"/>
     <child link="imu_link"/>
-    <origin xyz="${imu_x} ${imu_y} ${imu_z}" rpy="${M_PI} 0 -${M_PI/2}"/>
+    <origin xyz="${imu_x} ${imu_y} ${imu_z}" rpy="0 0 -${M_PI/2}"/>
   </joint>
 
   <link name="imu_link"/>

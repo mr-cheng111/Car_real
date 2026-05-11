@@ -192,6 +192,8 @@ python3 src/demo/controller_cli.py wait
 python3 src/demo/controller_cli.py stop
 ```
 
+`stop` 会先停止 demo 记录的 launch 进程，再强制清理 SLAM、Nav2、RViz、雷达、底盘、IMU、RF2O 和 EKF 等残留进程，防止硬件串口或雷达设备被旧节点占用。
+
 ## 7. 控制方式说明
 
 实机建图默认使用 `peripherals` 包里的 `teleop_key_control`，由 `robot_bringup mapping.launch.py` 自动启动并发布 `/cmd_vel`。

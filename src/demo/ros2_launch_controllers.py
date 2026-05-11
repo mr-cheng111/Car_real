@@ -764,9 +764,77 @@ class ExplorationFlowController:
         with self._lock:
             ok_nav = self.navigation.stop()
             ok_map = self.mapping.stop()
+            self._force_stop_all_processes()
             self._mode = "idle"
             self._update_runtime_status(navigation_has_goal=False)
             return ok_nav and ok_map
+
+    def _force_stop_all_processes(self) -> None:
+        patterns = [
+            "ros2 launch robot_bringup mapping.launch.py",
+            "ros2 launch robot_bringup real_robot.launch.py",
+            "ros2 launch car_nav2 real_car_nav2.launch.py",
+            "cartographer_node",
+            "cartographer_occupancy_grid_node",
+            "frontier_explorer",
+            "map_server",
+            "amcl",
+            "planner_server",
+            "controller_server",
+            "bt_navigator",
+            "behavior_server",
+            "recoveries_server",
+            "waypoint_follower",
+            "lifecycle_manager",
+            "rviz2",
+            "ros_robot_controller",
+            "rplidar_node",
+            "imu_cartographer_publisher",
+            "odom_publisher",
+            "wheel_joint_state_publisher",
+            "rf2o_laser_odometry_node",
+            "ekf_node",
+        ]
+
+        for pattern in patterns:
+            try:
+                subprocess.run(
+                    ["pkill", "-INT", "-f", pattern],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    timeout=1.0,
+                    check=False,
+                )
+            except Exception:
+                pass
+
+        time.sleep(1.0)
+
+        for pattern in patterns:
+            try:
+                subprocess.run(
+                    ["pkill", "-TERM", "-f", pattern],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    timeout=1.0,
+                    check=False,
+                )
+            except Exception:
+                pass
+
+        time.sleep(0.5)
+
+        for pattern in patterns:
+            try:
+                subprocess.run(
+                    ["pkill", "-KILL", "-f", pattern],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    timeout=1.0,
+                    check=False,
+                )
+            except Exception:
+                pass
 
     def wait_navigation(
         self,

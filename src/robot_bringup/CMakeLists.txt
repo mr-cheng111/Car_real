@@ -11,6 +11,7 @@ install(DIRECTORY
 )
 
 install(PROGRAMS
+  tools/save_cartographer_state.py
   tools/demo/controller_cli.py
   tools/demo/visual_map_annotator.py
   DESTINATION lib/${PROJECT_NAME}

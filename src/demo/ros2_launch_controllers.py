@@ -262,6 +262,12 @@ class MappingController(LaunchProcessController):
     """
 
     def __init__(self, log_dir: str = "./logs") -> None:
+        self.pbstream_path = os.path.abspath(
+            os.environ.get(
+                "ROBOT_BRINGUP_PBSTREAM_PATH",
+                "/home/mr-cheng/Car_real/src/car_nav2/maps/cartographer/latest.pbstream",
+            )
+        )
         super().__init__(
             name="mapping",
             package=os.environ.get("ROBOT_BRINGUP_MAPPING_PACKAGE", "robot_bringup"),
@@ -272,7 +278,31 @@ class MappingController(LaunchProcessController):
             log_dir=log_dir,
         )
 
+    def save_pbstream(self, timeout_sec: float = 25.0) -> bool:
+        if not self.is_running():
+            return True
+        try:
+            result = subprocess.run(
+                [
+                    "ros2", "run", "robot_bringup", "save_cartographer_state.py",
+                    "--output", self.pbstream_path,
+                    "--timeout", str(max(1.0, timeout_sec)),
+                ],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=max(2.0, timeout_sec + 5.0),
+                check=False,
+            )
+            if result.returncode != 0:
+                self._last_error = f"pbstream save failed: exit {result.returncode}"
+                return False
+            return True
+        except Exception as exc:
+            self._last_error = f"pbstream save failed: {exc}"
+            return False
+
     def stop(self, timeout_sec: float = 30.0) -> bool:
+        self.save_pbstream()
         return super().stop(timeout_sec=timeout_sec)
 
 

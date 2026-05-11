@@ -31,7 +31,8 @@ def generate_launch_description():
     chassis_serial_port = LaunchConfiguration('chassis_serial_port')
     chassis_baudrate = LaunchConfiguration('chassis_baudrate')
     nav2_params = LaunchConfiguration('params_file')
-    map_yaml = LaunchConfiguration('map')
+    cartographer_state = LaunchConfiguration('cartographer_state')
+    map_resolution = LaunchConfiguration('map_resolution')
     rviz_config = LaunchConfiguration('rviz_config')
 
     robot_description_launch = IncludeLaunchDescription(
@@ -185,15 +186,48 @@ def generate_launch_description():
         condition=IfCondition(start_hardware),
     )
 
-    nav2_bringup = TimerAction(
+    cartographer_localization_node = TimerAction(
         period=8.0,
+        actions=[
+            Node(
+                package='cartographer_ros',
+                executable='cartographer_node',
+                name='cartographer_node',
+                output='screen',
+                parameters=[{'use_sim_time': use_sim_time}],
+                arguments=[
+                    '-configuration_directory', os.path.join(bringup_share, 'config'),
+                    '-configuration_basename', 'cartographer_2d_real_localization.lua',
+                    '-load_state_filename', cartographer_state,
+                ],
+                remappings=[
+                    ('scan', '/scan'),
+                    ('odom', '/odom'),
+                    ('imu', '/imu'),
+                ],
+            ),
+            Node(
+                package='cartographer_ros',
+                executable='cartographer_occupancy_grid_node',
+                name='cartographer_occupancy_grid_node',
+                output='screen',
+                parameters=[{'use_sim_time': use_sim_time}],
+                arguments=[
+                    '-resolution', map_resolution,
+                    '-publish_period_sec', '0.5',
+                ],
+            ),
+        ],
+    )
+
+    nav2_bringup = TimerAction(
+        period=12.0,
         actions=[
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
-                    os.path.join(nav2_bringup_share, 'launch', 'bringup_launch.py')
+                    os.path.join(nav2_bringup_share, 'launch', 'navigation_launch.py')
                 ),
                 launch_arguments={
-                    'map': map_yaml,
                     'use_sim_time': use_sim_time,
                     'params_file': nav2_params,
                 }.items(),
@@ -219,6 +253,7 @@ def generate_launch_description():
         DeclareLaunchArgument('cmd_vel_topic', default_value='/cmd_vel'),
         DeclareLaunchArgument('base_frame', default_value='base_footprint'),
         DeclareLaunchArgument('odom_frame', default_value='odom'),
+        DeclareLaunchArgument('map_resolution', default_value='0.05'),
         DeclareLaunchArgument('lidar_serial_port', default_value='/dev/ttyS8'),
         DeclareLaunchArgument('chassis_serial_port', default_value='/dev/ttyS0'),
         DeclareLaunchArgument('chassis_baudrate', default_value='115200'),
@@ -240,8 +275,8 @@ def generate_launch_description():
         DeclareLaunchArgument('imu_euler_yaw_zero', default_value='false'),
         DeclareLaunchArgument('imu_print_debug', default_value='true'),
         DeclareLaunchArgument(
-            'map',
-            default_value='/home/mr-cheng/Car_real/src/exploration/map/exploration_map.yaml',
+            'cartographer_state',
+            default_value='/home/mr-cheng/Car_real/src/car_nav2/maps/cartographer/latest.pbstream',
         ),
         DeclareLaunchArgument(
             'params_file',
@@ -252,6 +287,7 @@ def generate_launch_description():
             default_value=os.path.join(bringup_share, 'config', 'default.rviz'),
         ),
         hardware_bringup,
+        cartographer_localization_node,
         nav2_bringup,
         rviz_node,
     ])

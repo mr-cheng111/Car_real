@@ -1,6 +1,6 @@
-# Car_sim
+# Car_real
 
-ROS 2 Humble 小车仿真与导航工作区。
+ROS 2 Humble 小车实车建图与导航工作区。
 
 ## 1. 工作区结构
 
@@ -13,7 +13,8 @@ ROS 2 Humble 小车仿真与导航工作区。
 - `src/driver/controller`：当前由 `/cmd_vel` 积分生成 `/odom_raw`
 - `src/driver/peripherals`：键盘遥控，发布 `/cmd_vel`
 - `src/rf2o_laser_odometry`：由 `/scan` 估计激光里程计，发布 `/odom_rf2o`
-- `src/car_nav2`：Nav2 仿真/导航入口，运行导航时会发布 `/cmd_vel`
+- `src/car_nav2`：Nav2 导航入口，`real_car_nav2.launch.py` 用于实车保存地图导航
+- `src/demo`：建图/导航流程控制脚本，保持 `mapping`、`navigation`、`goal`、点名导航等上层接口
 
 实机建图的完整包间交互、订阅链路、控制数据来源和反馈去向见 `src/README.md`。
 
@@ -22,7 +23,7 @@ ROS 2 Humble 小车仿真与导航工作区。
 主启动入口：
 
 ```bash
-cd /home/mr-cheng/Car_sim/src
+cd /home/mr-cheng/Car_real
 source /opt/ros/humble/setup.bash
 source install/setup.bash
 ros2 launch robot_bringup mapping.launch.py
@@ -81,7 +82,7 @@ sudo apt install -y \
 ## 5. 编译
 
 ```bash
-cd /home/mr-cheng/Car_sim
+cd /home/mr-cheng/Car_real
 source /opt/ros/humble/setup.bash
 colcon build
 source install/setup.bash
@@ -92,7 +93,7 @@ source install/setup.bash
 ### 6.1 启动实机建图（当前推荐）
 
 ```bash
-cd /home/mr-cheng/Car_sim/src
+cd /home/mr-cheng/Car_real
 source /opt/ros/humble/setup.bash
 source install/setup.bash
 ros2 launch robot_bringup mapping.launch.py
@@ -101,7 +102,7 @@ ros2 launch robot_bringup mapping.launch.py
 ### 6.2 启动仿真 + SLAM + RViz
 
 ```bash
-cd /home/mr-cheng/Car_sim
+cd /home/mr-cheng/Car_real
 source /opt/ros/humble/setup.bash
 source install/setup.bash
 ros2 launch robot_description gazebo.launch.py
@@ -109,11 +110,86 @@ ros2 launch robot_description gazebo.launch.py
 
 ### 6.3 启动 Nav2
 
+实车使用保存好的地图导航：
+
 ```bash
-cd /home/mr-cheng/Car_sim
+cd /home/mr-cheng/Car_real
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+ros2 launch car_nav2 real_car_nav2.launch.py
+```
+
+默认地图路径：
+
+```text
+/home/mr-cheng/Car_real/src/exploration/map/exploration_map.yaml
+```
+
+如果底层硬件已经由其他 launch 启动，避免重复打开串口和雷达：
+
+```bash
+ros2 launch car_nav2 real_car_nav2.launch.py start_hardware:=false
+```
+
+仿真使用原有入口：
+
+```bash
+cd /home/mr-cheng/Car_real
 source /opt/ros/humble/setup.bash
 source install/setup.bash
 ros2 launch car_nav2 car_nav2.launch.py
+```
+
+### 6.4 Demo 一键流程
+
+demo 保持原有上层接口，不需要额外传地图路径或硬件参数。
+
+启动自动 SLAM 建图和自动探索：
+
+```bash
+cd /home/mr-cheng/Car_real
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+python3 src/demo/controller_cli.py mapping
+```
+
+探索完成条件由 `frontier_explorer` 判断：连续多次找不到可探索 frontier，地图足够大后，返回起点并保存地图。地图保存到：
+
+```text
+/home/mr-cheng/Car_real/src/exploration/map/exploration_map.yaml
+/home/mr-cheng/Car_real/src/exploration/map/exploration_map.pgm
+```
+
+启动保存地图导航：
+
+```bash
+python3 src/demo/controller_cli.py navigation
+```
+
+`navigation` 启动前会先停止 demo 启动的建图进程，并强制清理 SLAM、自动探索和旧硬件节点，避免雷达、底盘串口和 TF 重复启动。随后启动 `car_nav2 real_car_nav2.launch.py`。
+
+发送目标点：
+
+```bash
+python3 src/demo/controller_cli.py goal --x 1.0 --y 0.5 --yaw 0.0
+```
+
+使用 `src/demo/named_points.json` 里的命名点：
+
+```bash
+python3 src/demo/controller_cli.py a
+```
+
+取消当前导航目标但保留导航进程：
+
+```bash
+python3 src/demo/controller_cli.py wait
+```
+
+停止 demo 启动的建图/导航：
+
+```bash
+python3 src/demo/controller_cli.py stop
 ```
 
 ## 7. 控制方式说明
@@ -125,7 +201,7 @@ ros2 launch car_nav2 car_nav2.launch.py
 ### 7.1 仿真键盘控制
 
 ```bash
-cd /home/mr-cheng/Car_sim
+cd /home/mr-cheng/Car_real
 source /opt/ros/humble/setup.bash
 source install/setup.bash
 ros2 run teleop_twist_keyboard teleop_twist_keyboard

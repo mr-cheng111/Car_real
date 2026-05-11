@@ -12,4 +12,7 @@ __pycache__/
 .idea/
 
 # Local assistant metadata
+.codex/
 .claude/
+.cursor/
+.roo/

@@ -1,10 +1,13 @@
 imu_cartographer_publisher:
   ros__parameters:
     topic: /imu
+    euler_topic: /imu/euler_deg
     frame_id: imu_link
     i2c_bus: 4
     device_addr: 0x6A
     sample_period: 0.005
     odr_hz: 208
     axis_map: -y,-x,-z
+    publish_orientation: true
+    publish_euler: true
     print_debug: true

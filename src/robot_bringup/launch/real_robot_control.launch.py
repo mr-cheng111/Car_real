@@ -28,6 +28,9 @@ def generate_launch_description():
         DeclareLaunchArgument('imu_sample_period', default_value='0.005'),
         DeclareLaunchArgument('imu_odr_hz', default_value='208'),
         DeclareLaunchArgument('imu_axis_map', default_value='-y,-x,-z'),
+        DeclareLaunchArgument('imu_publish_orientation', default_value='true'),
+        DeclareLaunchArgument('imu_publish_euler', default_value='true'),
+        DeclareLaunchArgument('imu_euler_topic', default_value='/imu/euler_deg'),
         DeclareLaunchArgument('imu_print_debug', default_value='true'),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
@@ -54,6 +57,9 @@ def generate_launch_description():
                 'imu_sample_period': LaunchConfiguration('imu_sample_period'),
                 'imu_odr_hz': LaunchConfiguration('imu_odr_hz'),
                 'imu_axis_map': LaunchConfiguration('imu_axis_map'),
+                'imu_publish_orientation': LaunchConfiguration('imu_publish_orientation'),
+                'imu_publish_euler': LaunchConfiguration('imu_publish_euler'),
+                'imu_euler_topic': LaunchConfiguration('imu_euler_topic'),
                 'imu_print_debug': LaunchConfiguration('imu_print_debug'),
             }.items(),
         ),

@@ -10,11 +10,13 @@ import sys
 import time
 
 try:
+    from geometry_msgs.msg import Vector3Stamped
     import rclpy
     from rclpy.node import Node
     from rclpy.utilities import remove_ros_args
     from sensor_msgs.msg import Imu
 except ImportError:
+    Vector3Stamped = None
     rclpy = None
     Node = object
     Imu = None
@@ -124,6 +126,8 @@ class MahonyAHRS:
 
     def euler_deg(self):
         q0, q1, q2, q3 = self.q
+        # 四元数转欧拉角采用 ROS 常用 ZYX 顺序：roll 绕 X，pitch 绕 Y，yaw 绕 Z。
+        # 公式来源于单位四元数到 Tait-Bryan angles 的标准转换。
         roll = math.atan2(
             2.0 * (q2 * q3 + q0 * q1),
             1.0 - 2.0 * (q1 * q1 + q2 * q2),
@@ -313,6 +317,11 @@ class ImuCartographerNode(Node):
 
         self.ahrs = MahonyAHRS(args.mahony_kp, args.mahony_ki)
         self.pub = self.create_publisher(Imu, args.topic, 20)
+        self.euler_pub = (
+            self.create_publisher(Vector3Stamped, args.euler_topic, 20)
+            if args.publish_euler
+            else None
+        )
         self.last_time = time.monotonic()
         self.filtered_gyro = [0.0, 0.0, 0.0]
         self.filtered_accel = [0.0, 0.0, 0.0]
@@ -322,6 +331,8 @@ class ImuCartographerNode(Node):
             f"publishing Cartographer IMU: topic={args.topic}, frame={args.frame_id}, "
             f"axis_map={args.axis_map}, i2c={self.imu.path}, addr=0x{args.device_addr:02X}"
         )
+        if self.euler_pub is not None:
+            self.get_logger().info(f"publishing IMU Euler angles in degrees: topic={args.euler_topic}")
 
     def publish_once(self):
         try:
@@ -388,9 +399,17 @@ class ImuCartographerNode(Node):
             ]
 
             self.pub.publish(msg)
+            roll, pitch, yaw = self.ahrs.euler_deg()
+
+            if self.euler_pub is not None:
+                euler_msg = Vector3Stamped()
+                euler_msg.header = msg.header
+                euler_msg.vector.x = roll
+                euler_msg.vector.y = pitch
+                euler_msg.vector.z = yaw
+                self.euler_pub.publish(euler_msg)
 
             if self.args.print_debug:
-                roll, pitch, yaw = self.ahrs.euler_deg()
                 accel_norm = math.sqrt(sum(v * v for v in self.filtered_accel))
                 print(
                     f"roll={roll:8.2f} pitch={pitch:8.2f} yaw={yaw:8.2f} | "
@@ -492,6 +511,7 @@ def build_arg_parser():
         description="Read ASM330LHH over I2C and publish Cartographer-compatible sensor_msgs/Imu."
     )
     parser.add_argument("--topic", default="/imu", help="ROS topic for sensor_msgs/Imu")
+    parser.add_argument("--euler-topic", default="/imu/euler_deg", help="ROS topic for Euler angles in degrees")
     parser.add_argument("--frame-id", default="imu_link", help="IMU frame_id; match Cartographer tracking_frame")
     parser.add_argument("--i2c-bus", type=int, default=4)
     parser.add_argument("--device-addr", type=lambda value: int(value, 0), default=0x6A)
@@ -524,6 +544,7 @@ def build_arg_parser():
         help="Publish Mahony orientation. Leave disabled for Cartographer to avoid feeding drifting yaw.",
     )
     parser.add_argument("--print-debug", action="store_true")
+    parser.add_argument("--publish-euler", action="store_true", help="Publish Euler angles as geometry_msgs/Vector3Stamped in degrees.")
     parser.add_argument("--print-only", action="store_true", help="Do not use ROS; only print mapped values.")
     parser.add_argument("--diagnose-raw", action="store_true", help="Print raw sensor-frame values without mapping/filtering.")
     return parser

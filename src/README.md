@@ -112,10 +112,10 @@ source /home/mr-cheng/Car_sim/src/install/setup.bash
 ros2 launch robot_bringup mapping.launch.py
 ```
 
-如果 C1 雷达设备不是 `/dev/ttyUSB0`：
+如果 C1 雷达设备不是默认的 `/dev/ttyS8`：
 
 ```bash
-ros2 launch robot_bringup mapping.launch.py lidar_serial_port:=/dev/ttyUSB1
+ros2 launch robot_bringup mapping.launch.py lidar_serial_port:=/dev/ttyUSB0
 ```
 
 如果不想启动键盘遥控：
@@ -223,7 +223,7 @@ C1 雷达硬件
 
 ## 7. 关键启动参数
 
-- `lidar_serial_port`：C1 雷达串口，默认 `/dev/ttyUSB0`。
+- `lidar_serial_port`：C1 雷达串口，默认 `/dev/ttyS8`。
 - `lidar_frame`：雷达 frame，默认 `laser_link`。
 - `imu_frame`：外部 IMU frame，默认 `imu_link`。
 - `base_frame`：机器人底盘运动 frame，默认 `base_footprint`。
@@ -355,7 +355,7 @@ ls -l /dev/ttyUSB*
 然后指定端口：
 
 ```bash
-ros2 launch robot_bringup mapping.launch.py lidar_serial_port:=/dev/ttyUSB1
+ros2 launch robot_bringup mapping.launch.py lidar_serial_port:=/dev/ttyUSB0
 ```
 
 ### 没有 `/imu`

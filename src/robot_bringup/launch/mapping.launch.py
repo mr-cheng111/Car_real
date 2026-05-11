@@ -14,7 +14,7 @@ def generate_launch_description():
         DeclareLaunchArgument('use_sim_time', default_value='false'),
         DeclareLaunchArgument('enable_teleop', default_value='true'),
         DeclareLaunchArgument('use_rf2o_in_ekf', default_value='true'),
-        DeclareLaunchArgument('lidar_serial_port', default_value='/dev/ttyUSB0'),
+        DeclareLaunchArgument('lidar_serial_port', default_value='/dev/ttyS8'),
         DeclareLaunchArgument('map_resolution', default_value='0.05'),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(

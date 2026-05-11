@@ -31,6 +31,7 @@ WHO_AM_I = 0x0F
 CTRL1_XL = 0x10
 CTRL2_G = 0x11
 CTRL3_C = 0x12
+STATUS_REG = 0x1E
 OUTX_L_G = 0x22
 
 EXPECTED_WHO_AM_I = {0x6A, 0x6B}
@@ -273,6 +274,16 @@ class I2CImu:
         az = self._i16(data[10], data[11]) * self.accel_scale_ms2
         return (gx, gy, gz), (ax, ay, az)
 
+    def wait_data_ready(self, timeout_sec):
+        deadline = time.monotonic() + timeout_sec
+        while time.monotonic() < deadline:
+            status = self.read_reg(STATUS_REG)
+            # STATUS_REG: bit0=XLDA，bit1=GDA，两个都置位时再读取同一批 gyro+accel 输出寄存器。
+            if (status & 0x03) == 0x03:
+                return True
+            time.sleep(0.0005)
+        return False
+
 
 def parse_axis_map(axis_map):
     axes = {"x": 0, "y": 1, "z": 2}
@@ -305,6 +316,19 @@ def map_vec(vec, mapping):
 
 def clamp(value, limit):
     return max(-limit, min(limit, value))
+
+
+def accel_norm(accel):
+    return math.sqrt(accel[0] * accel[0] + accel[1] * accel[1] + accel[2] * accel[2])
+
+
+def is_valid_sample(gyro, accel, max_gyro_rad_s, min_accel_norm, max_accel_norm):
+    if any(not math.isfinite(value) for value in gyro + accel):
+        return False
+    if max(abs(gyro[0]), abs(gyro[1]), abs(gyro[2])) > max_gyro_rad_s:
+        return False
+    norm = accel_norm(accel)
+    return min_accel_norm <= norm <= max_accel_norm
 
 
 def odr_to_reg_value(odr_hz):
@@ -400,6 +424,7 @@ class ImuCartographerNode(Node):
         self.last_time = time.monotonic()
         self.filtered_gyro = [0.0, 0.0, 0.0]
         self.filtered_accel = [0.0, 0.0, 0.0]
+        self.rejected_samples = 0
         self.timer = self.create_timer(args.sample_period, self.publish_once)
 
         self.get_logger().info(
@@ -411,8 +436,28 @@ class ImuCartographerNode(Node):
 
     def publish_once(self):
         try:
+            if self.args.wait_data_ready:
+                self.imu.wait_data_ready(self.args.data_ready_timeout_sec)
+
             gyro_sensor, accel_sensor = self.imu.read_sensor_units()
             gyro_sensor = tuple(gyro_sensor[i] - self.bias[i] for i in range(3))
+
+            if not is_valid_sample(
+                gyro_sensor,
+                accel_sensor,
+                self.args.reject_max_gyro_rad_s,
+                self.args.reject_min_accel_norm,
+                self.args.reject_max_accel_norm,
+            ):
+                self.rejected_samples += 1
+                self.get_logger().warn(
+                    "rejected abnormal IMU sample: "
+                    f"gyro=({gyro_sensor[0]:.4f}, {gyro_sensor[1]:.4f}, {gyro_sensor[2]:.4f}) rad/s, "
+                    f"accel=({accel_sensor[0]:.3f}, {accel_sensor[1]:.3f}, {accel_sensor[2]:.3f}) m/s^2, "
+                    f"|a|={accel_norm(accel_sensor):.3f}, rejected={self.rejected_samples}",
+                    throttle_duration_sec=2.0,
+                )
+                return
 
             gyro_robot = map_vec(gyro_sensor, self.mapping)
             accel_robot = map_vec(accel_sensor, self.mapping)
@@ -533,6 +578,8 @@ def print_only_loop(args):
         print("开始输出机器人坐标系下的 IMU 数据，Ctrl-C 停止")
         print("默认映射: robot_x=-sensor_y, robot_y=-sensor_x, robot_z=-sensor_z")
         while True:
+            if args.wait_data_ready:
+                imu.wait_data_ready(args.data_ready_timeout_sec)
             gyro_sensor, accel_sensor = imu.read_sensor_units()
             gyro_sensor = tuple(gyro_sensor[i] - bias[i] for i in range(3))
             gyro_robot = map_vec(gyro_sensor, mapping)
@@ -576,12 +623,21 @@ def diagnose_loop(args):
     try:
         print("开始输出 IMU 原始传感器坐标系数据，Ctrl-C 停止")
         while True:
+            if args.wait_data_ready:
+                imu.wait_data_ready(args.data_ready_timeout_sec)
             gyro_sensor, accel_sensor = imu.read_sensor_units()
             accel_norm = math.sqrt(sum(v * v for v in accel_sensor))
+            valid = is_valid_sample(
+                gyro_sensor,
+                accel_sensor,
+                args.reject_max_gyro_rad_s,
+                args.reject_min_accel_norm,
+                args.reject_max_accel_norm,
+            )
             print(
                 f"gyro_sensor=({gyro_sensor[0]: .5f}, {gyro_sensor[1]: .5f}, {gyro_sensor[2]: .5f}) rad/s | "
                 f"accel_sensor=({accel_sensor[0]: .5f}, {accel_sensor[1]: .5f}, {accel_sensor[2]: .5f}) m/s^2 | "
-                f"|a|={accel_norm:.5f}",
+                f"|a|={accel_norm:.5f} | valid={valid}",
                 flush=True,
             )
             time.sleep(args.sample_period)
@@ -608,6 +664,11 @@ def build_arg_parser():
     parser.add_argument("--low-pass-alpha", type=float, default=0.35)
     parser.add_argument("--max-gyro-rad-s", type=float, default=4.0)
     parser.add_argument("--max-accel-m-s2", type=float, default=30.0)
+    parser.add_argument("--wait-data-ready", action="store_true")
+    parser.add_argument("--data-ready-timeout-sec", type=float, default=0.01)
+    parser.add_argument("--reject-min-accel-norm", type=float, default=6.0)
+    parser.add_argument("--reject-max-accel-norm", type=float, default=13.0)
+    parser.add_argument("--reject-max-gyro-rad-s", type=float, default=8.0)
     parser.add_argument(
         "--axis-map",
         default="-y,-x,-z",

@@ -234,6 +234,8 @@ C1 雷达硬件
 - `imu_device_addr`：外部 IMU 地址，默认 `0x6A`。
 - `imu_sample_period`：IMU 软件读取周期，默认 `0.005s`，约 `200Hz`。
 - `imu_odr_hz`：ASM330LHH 硬件输出数据率，默认 `208Hz`。
+- `imu_wait_data_ready`：读取前等待 ASM330LHH data-ready，默认 `true`。
+- `imu_reject_min_accel_norm` / `imu_reject_max_accel_norm`：加速度模长异常帧过滤范围，默认 `6.0~13.0m/s^2`。
 - `imu_axis_map`：IMU 轴映射，默认 `-y,-x,-z`。
 - `imu_publish_orientation`：是否发布 Mahony AHRS 姿态四元数，默认 `true`。
 - `imu_publish_euler`：是否发布欧拉角 topic，默认 `true`。

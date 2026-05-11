@@ -13,6 +13,9 @@ def launch_setup(context):
     sample_period = LaunchConfiguration('sample_period')
     odr_hz = LaunchConfiguration('odr_hz')
     axis_map = LaunchConfiguration('axis_map')
+    reject_min_accel_norm = LaunchConfiguration('reject_min_accel_norm')
+    reject_max_accel_norm = LaunchConfiguration('reject_max_accel_norm')
+    reject_max_gyro_rad_s = LaunchConfiguration('reject_max_gyro_rad_s')
 
     arguments = [
         '--topic', topic,
@@ -22,8 +25,13 @@ def launch_setup(context):
         '--device-addr', device_addr,
         '--sample-period', sample_period,
         '--odr-hz', odr_hz,
+        '--reject-min-accel-norm', reject_min_accel_norm,
+        '--reject-max-accel-norm', reject_max_accel_norm,
+        '--reject-max-gyro-rad-s', reject_max_gyro_rad_s,
         ['--axis-map=', axis_map],
     ]
+    if LaunchConfiguration('wait_data_ready').perform(context).lower() in ('1', 'true', 'yes', 'on'):
+        arguments.append('--wait-data-ready')
     if LaunchConfiguration('publish_orientation').perform(context).lower() in ('1', 'true', 'yes', 'on'):
         arguments.append('--publish-orientation')
     if LaunchConfiguration('publish_euler').perform(context).lower() in ('1', 'true', 'yes', 'on'):
@@ -54,6 +62,10 @@ def generate_launch_description():
         DeclareLaunchArgument('device_addr', default_value='0x6A'),
         DeclareLaunchArgument('sample_period', default_value='0.005'),
         DeclareLaunchArgument('odr_hz', default_value='208'),
+        DeclareLaunchArgument('wait_data_ready', default_value='true'),
+        DeclareLaunchArgument('reject_min_accel_norm', default_value='6.0'),
+        DeclareLaunchArgument('reject_max_accel_norm', default_value='13.0'),
+        DeclareLaunchArgument('reject_max_gyro_rad_s', default_value='8.0'),
         DeclareLaunchArgument(
             'publish_orientation',
             default_value='true',

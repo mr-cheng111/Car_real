@@ -7,6 +7,10 @@ imu_cartographer_publisher:
     device_addr: 0x6A
     sample_period: 0.005
     odr_hz: 208
+    wait_data_ready: true
+    reject_min_accel_norm: 6.0
+    reject_max_accel_norm: 13.0
+    reject_max_gyro_rad_s: 8.0
     axis_map: -y,-x,-z
     publish_orientation: true
     publish_euler: true

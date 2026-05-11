@@ -27,12 +27,14 @@
     imu=(-35.7881, 5.1315, -34.0128)mm
     wheel_mid=(100, 0, -124.72)mm
     imu-base = (-135.7881, 5.1315, 90.7072)mm
-    当前将 imu_link 直接对齐到 base_link，
-    即两者姿态完全一致，满足：
-    x_base = x_imu
-    y_base = y_imu
-    z_base = z_imu
-    因此对应 imu_cartographer_publisher 的 axis_map=x,y,z。
+    IMU 实体为倒装安装，并且相对 base_link 还绕 z 轴旋转了 -90deg。
+    因此 imu_link 相对 base_link 的旋转取：
+    R = Rz(-pi/2) * Rx(pi)
+    对应坐标轴关系为：
+    x_base = -y_imu
+    y_base = -x_imu
+    z_base = -z_imu
+    因此对应 imu_cartographer_publisher 的 axis_map=-y,-x,-z。
   -->
   <xacro:property name="imu_x" value="-0.1357881"/>
   <xacro:property name="imu_y" value="0.0051315"/>
@@ -224,7 +226,7 @@
   <joint name="imu_joint" type="fixed">
     <parent link="base_link"/>
     <child link="imu_link"/>
-    <origin xyz="${imu_x} ${imu_y} ${imu_z}" rpy="0 0 0"/>
+    <origin xyz="${imu_x} ${imu_y} ${imu_z}" rpy="${M_PI} 0 -${M_PI/2}"/>
   </joint>
 
   <link name="imu_link"/>

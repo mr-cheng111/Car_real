@@ -264,7 +264,7 @@
       <always_on>true</always_on>
       <visualize>true</visualize>
       <update_rate>10</update_rate>
-      <pose>0 0 0 0 0 3.1415926</pose>
+      <pose>0 0 0 0 0 0</pose>
       <ray>
           <scan>
             <horizontal>

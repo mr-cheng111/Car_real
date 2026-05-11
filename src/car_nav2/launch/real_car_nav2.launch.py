@@ -276,7 +276,7 @@ def generate_launch_description():
         DeclareLaunchArgument('imu_print_debug', default_value='true'),
         DeclareLaunchArgument(
             'cartographer_state',
-            default_value='/home/mr-cheng/Car_real/src/car_nav2/maps/cartographer/latest.pbstream',
+            default_value='src/car_nav2/maps/cartographer/latest.pbstream',
         ),
         DeclareLaunchArgument(
             'params_file',

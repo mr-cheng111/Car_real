@@ -15,7 +15,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Save Cartographer state")
     parser.add_argument(
         "--output",
-        default="/home/mr-cheng/Car_real/src/car_nav2/maps/cartographer/latest.pbstream",
+        default="src/car_nav2/maps/cartographer/latest.pbstream",
         help="Output .pbstream path",
     )
     parser.add_argument("--service", default="/write_state")

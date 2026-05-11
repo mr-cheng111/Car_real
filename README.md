@@ -8,7 +8,7 @@ ROS 2 Humble 实车建图与导航工作区。当前推荐流程围绕两件事�
 默认 Cartographer 状态地图保存/读取路径：
 
 ```text
-/home/mr-cheng/Car_real/src/car_nav2/maps/cartographer/latest.pbstream
+src/car_nav2/maps/cartographer/latest.pbstream
 ```
 
 ## 1. 环境准备
@@ -68,7 +68,7 @@ ls -lh src/car_nav2/maps/cartographer/latest.pbstream
 如果要保存到自定义路径：
 
 ```bash
-ROBOT_BRINGUP_PBSTREAM_PATH=/home/mr-cheng/Car_real/src/car_nav2/maps/cartographer/my_map.pbstream \
+ROBOT_BRINGUP_PBSTREAM_PATH=src/car_nav2/maps/cartographer/my_map.pbstream \
 python3 src/demo/controller_cli.py stop
 ```
 
@@ -84,7 +84,7 @@ ros2 launch car_nav2 real_car_nav2.launch.py
 
 ```bash
 ros2 launch car_nav2 real_car_nav2.launch.py \
-  cartographer_state:=/home/mr-cheng/Car_real/src/car_nav2/maps/cartographer/my_map.pbstream
+  cartographer_state:=src/car_nav2/maps/cartographer/my_map.pbstream
 ```
 
 导航链路分工：
@@ -125,7 +125,7 @@ python3 src/demo/controller_cli.py stop
 `stop` 会先调用 Cartographer `/write_state` 保存：
 
 ```text
-/home/mr-cheng/Car_real/src/car_nav2/maps/cartographer/latest.pbstream
+src/car_nav2/maps/cartographer/latest.pbstream
 ```
 
 然后再停止建图、探索、雷达、底盘、IMU、RF2O、EKF 等进程。

@@ -265,7 +265,7 @@ class MappingController(LaunchProcessController):
         self.pbstream_path = os.path.abspath(
             os.environ.get(
                 "ROBOT_BRINGUP_PBSTREAM_PATH",
-                "/home/mr-cheng/Car_real/src/car_nav2/maps/cartographer/latest.pbstream",
+                "src/car_nav2/maps/cartographer/latest.pbstream",
             )
         )
         super().__init__(

@@ -43,6 +43,14 @@ def generate_launch_description():
     odom_frame = LaunchConfiguration('odom_frame')
     chassis_serial_port = LaunchConfiguration('chassis_serial_port')
     chassis_baudrate = LaunchConfiguration('chassis_baudrate')
+    wheel_track = LaunchConfiguration('wheel_track')
+    wheel_diameter = LaunchConfiguration('wheel_diameter')
+    motor_speed_topic = LaunchConfiguration('motor_speed_topic')
+    motor_speed_scale = LaunchConfiguration('motor_speed_scale')
+    enable_speed_closed_loop = LaunchConfiguration('enable_speed_closed_loop')
+    speed_kp = LaunchConfiguration('speed_kp')
+    speed_ki = LaunchConfiguration('speed_ki')
+    speed_kd = LaunchConfiguration('speed_kd')
     nav2_params = LaunchConfiguration('nav2_params')
     explore_params = LaunchConfiguration('explore_params')
     rviz_config = LaunchConfiguration('rviz_config')
@@ -105,6 +113,14 @@ def generate_launch_description():
             'imu_frame': imu_frame,
             'publish_imu': False,
             'cmd_vel_topic': cmd_vel_topic,
+            'wheel_track': wheel_track,
+            'wheel_diameter': wheel_diameter,
+            'motor_speed_topic': motor_speed_topic,
+            'motor_speed_scale': motor_speed_scale,
+            'enable_speed_closed_loop': enable_speed_closed_loop,
+            'speed_kp': speed_kp,
+            'speed_ki': speed_ki,
+            'speed_kd': speed_kd,
         }],
     )
 
@@ -119,6 +135,10 @@ def generate_launch_description():
                 'base_frame_id': base_frame,
                 'odom_frame_id': odom_frame,
                 'pub_odom_topic': True,
+                'use_wheel_speed_feedback': True,
+                'motor_speed_topic': motor_speed_topic,
+                'wheel_track': wheel_track,
+                'wheel_diameter': wheel_diameter,
             },
         ],
     )
@@ -130,8 +150,8 @@ def generate_launch_description():
         output='screen',
         parameters=[{
             'cmd_vel_topic': cmd_vel_topic,
-            'wheel_radius': 0.05,
-            'wheel_track': 0.2948,
+            'wheel_radius': 0.0175,
+            'wheel_track': wheel_track,
         }],
     )
 
@@ -284,6 +304,14 @@ def generate_launch_description():
         DeclareLaunchArgument('lidar_serial_port', default_value='/dev/ttyS8'),
         DeclareLaunchArgument('chassis_serial_port', default_value='/dev/ttyS0'),
         DeclareLaunchArgument('chassis_baudrate', default_value='115200'),
+        DeclareLaunchArgument('wheel_track', default_value='0.2948'),
+        DeclareLaunchArgument('wheel_diameter', default_value='0.035'),
+        DeclareLaunchArgument('motor_speed_topic', default_value='/motor_speed'),
+        DeclareLaunchArgument('motor_speed_scale', default_value='1.0'),
+        DeclareLaunchArgument('enable_speed_closed_loop', default_value='true'),
+        DeclareLaunchArgument('speed_kp', default_value='6.0'),
+        DeclareLaunchArgument('speed_ki', default_value='1.0'),
+        DeclareLaunchArgument('speed_kd', default_value='0.0'),
         DeclareLaunchArgument('lidar_frame', default_value='laser_link'),
         DeclareLaunchArgument('imu_frame', default_value='imu_link'),
         DeclareLaunchArgument('map_resolution', default_value='0.05'),

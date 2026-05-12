@@ -11,7 +11,7 @@
   <xacro:property name="base_height" value="0.1"/>
   
   <!-- 轮子参数 -->
-  <xacro:property name="wheel_radius" value="0.05"/>  <!-- 直径10cm，半径5cm -->
+  <xacro:property name="wheel_radius" value="0.0175"/>  <!-- 直径3.5cm，半径1.75cm -->
   <xacro:property name="wheel_width" value="0.03"/>
   <xacro:property name="wheel_mass" value="0.15"/>
   <xacro:property name="track_width" value="0.2948"/>  <!-- 左右轮中心距 294.8mm -->

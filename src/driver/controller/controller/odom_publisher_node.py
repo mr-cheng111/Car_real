@@ -10,6 +10,7 @@ from rclpy.node import Node
 from std_srvs.srv import Trigger
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Pose2D, Pose, Twist, PoseWithCovarianceStamped, TransformStamped
+from ros_robot_controller_msgs.msg import MotorsState
 
 ODOM_POSE_COVARIANCE = list(map(float, 
                         [1e-3, 0, 0, 0, 0, 0, 
@@ -76,9 +77,12 @@ class Controller(Node):
         self.linear_x = 0.0
         self.linear_y = 0.0
         self.angular_z = 0.0
+        self.cmd_linear_x = 0.0
+        self.cmd_angular_z = 0.0
         self.pose_yaw = 0
         self.last_time = None
         self.current_time = None
+        self.last_motor_speed_time = 0.0
         signal.signal(signal.SIGINT, self.shutdown)
 
         # 声明参数
@@ -88,6 +92,13 @@ class Controller(Node):
         self.declare_parameter('linear_correction_factor', 1.00)
         self.declare_parameter('angular_correction_factor', 1.00)
         self.declare_parameter('machine_type', os.environ['MACHINE_TYPE'])
+        self.declare_parameter('use_wheel_speed_feedback', True)
+        self.declare_parameter('motor_speed_topic', '/motor_speed')
+        self.declare_parameter('wheel_diameter', 0.035)
+        self.declare_parameter('wheel_track', 0.2948)
+        self.declare_parameter('left_motor_id', 2)
+        self.declare_parameter('right_motor_id', 1)
+        self.declare_parameter('motor_speed_timeout', 0.2)
         
         self.pub_odom_topic = self.get_parameter('pub_odom_topic').value
         self.base_frame_id = self.get_parameter('base_frame_id').value
@@ -95,6 +106,13 @@ class Controller(Node):
         
         self.linear_factor = self.get_parameter('linear_correction_factor').value
         self.angular_factor = self.get_parameter('angular_correction_factor').value
+        self.use_wheel_speed_feedback = bool(self.get_parameter('use_wheel_speed_feedback').value)
+        self.motor_speed_topic = str(self.get_parameter('motor_speed_topic').value)
+        self.wheel_diameter = float(self.get_parameter('wheel_diameter').value)
+        self.wheel_track = float(self.get_parameter('wheel_track').value)
+        self.left_motor_id = int(self.get_parameter('left_motor_id').value)
+        self.right_motor_id = int(self.get_parameter('right_motor_id').value)
+        self.motor_speed_timeout = float(self.get_parameter('motor_speed_timeout').value)
 
         self.clock = self.get_clock() 
         if self.pub_odom_topic:
@@ -118,6 +136,7 @@ class Controller(Node):
         self.pose_pub = self.create_publisher(PoseWithCovarianceStamped, 'set_pose', 1)
         self.create_subscription(Pose2D, 'set_odom', self.set_odom, 1)
         self.create_subscription(Twist, '/cmd_vel', self.cmd_vel_callback, 1)
+        self.create_subscription(MotorsState, self.motor_speed_topic, self.motor_speed_callback, 10)
         self.create_service(Trigger, 'controller/load_calibrate_param', self.load_calibrate_param)
 
         self.create_service(Trigger, '~/init_finish', self.get_node_state)
@@ -168,9 +187,37 @@ class Controller(Node):
         self.pose_pub.publish(pose)
 
     def cmd_vel_callback(self, msg):
-        self.linear_x = msg.linear.x
+        self.cmd_linear_x = msg.linear.x
+        self.cmd_angular_z = msg.angular.z
+        if not self.use_wheel_speed_feedback:
+            self.linear_x = self.cmd_linear_x
+            self.linear_y = 0.0
+            self.angular_z = self.cmd_angular_z
+
+    def motor_speed_callback(self, msg):
+        left_rps = None
+        right_rps = None
+        for motor in msg.data:
+            if motor.id == self.left_motor_id:
+                left_rps = float(motor.rps)
+            elif motor.id == self.right_motor_id:
+                right_rps = float(motor.rps)
+
+        if left_rps is None or right_rps is None:
+            return
+        if self.wheel_diameter <= 0.0 or self.wheel_track <= 0.0:
+            return
+
+        # 轮速反解算:
+        # 滚动约束 v_wheel = pi * D * n，其中 n 为 rps。
+        # 差速模型 v_l = v + omega * L / 2, v_r = v - omega * L / 2，
+        # 因此 v = (v_l + v_r) / 2, omega = (v_l - v_r) / L。
+        left_linear = math.pi * self.wheel_diameter * left_rps
+        right_linear = math.pi * self.wheel_diameter * right_rps
+        self.linear_x = (left_linear + right_linear) / 2.0
         self.linear_y = 0.0
-        self.angular_z = msg.angular.z
+        self.angular_z = (left_linear - right_linear) / self.wheel_track
+        self.last_motor_speed_time = time.time()
 
     def cal_odom_fun(self):
         while True:
@@ -181,6 +228,12 @@ class Controller(Node):
                 # 计算时间间隔
                 self.dt = self.current_time - self.last_time
             self.odom.header.stamp = self.clock.now().to_msg()
+
+            if self.use_wheel_speed_feedback and self.last_motor_speed_time > 0.0:
+                if self.current_time - self.last_motor_speed_time > self.motor_speed_timeout:
+                    self.linear_x = 0.0
+                    self.linear_y = 0.0
+                    self.angular_z = 0.0
 
             self.x += math.cos(self.pose_yaw)*self.linear_x*self.dt - math.sin(self.pose_yaw)*self.linear_y*self.dt
             self.y += math.sin(self.pose_yaw)*self.linear_x*self.dt + math.cos(self.pose_yaw)*self.linear_y*self.dt

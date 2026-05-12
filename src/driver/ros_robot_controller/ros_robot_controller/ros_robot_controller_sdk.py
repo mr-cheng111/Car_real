@@ -34,6 +34,8 @@ class PacketFunction(enum.IntEnum):
     PACKET_FUNC_OLED = 10 # OLED 显示内容设置
     PACKET_FUNC_NONE = 11
 
+PACKET_FUNC_MOTOR_SPEED = 10
+
 class PacketReportKeyEvents(enum.IntEnum):
     # 按键的不同状态
     KEY_EVENT_PRESSED = 0x01
@@ -114,6 +116,7 @@ class Board:
         self.imu_queue = queue.Queue(maxsize=1)
         self.gamepad_queue = queue.Queue(maxsize=1)
         self.sbus_queue = queue.Queue(maxsize=1)
+        self.motor_speed_queue = queue.Queue(maxsize=1)
 
         self.parsers = {
             PacketFunction.PACKET_FUNC_SYS: self.packet_report_sys,
@@ -170,6 +173,16 @@ class Board:
             self.sbus_queue.put_nowait(data)
         except queue.Full:
             pass
+
+    def packet_report_motor_speed(self, data):
+        try:
+            self.motor_speed_queue.put_nowait(data)
+        except queue.Full:
+            try:
+                self.motor_speed_queue.get_nowait()
+            except queue.Empty:
+                pass
+            self.motor_speed_queue.put_nowait(data)
 
     def get_battery(self):
         # 获取电压，单位mAh
@@ -309,6 +322,22 @@ class Board:
                 return None
         else:
             print('get_sbus enable reception first!')
+            return None
+
+    def get_motor_speed(self, left_offset=0, right_offset=4):
+        if self.enable_recv:
+            try:
+                data = self.motor_speed_queue.get(block=False)
+                min_size = max(left_offset, right_offset) + 2
+                if len(data) < min_size:
+                    return None
+                left_speed = struct.unpack_from('<h', data, left_offset)[0]
+                right_speed = struct.unpack_from('<h', data, right_offset)[0]
+                return left_speed, right_speed
+            except queue.Empty:
+                return None
+        else:
+            print('get_motor_speed enable reception first!')
             return None
 
     def buf_write(self, func, data):
@@ -496,7 +525,9 @@ class Board:
                             if crc8 == dat:
                                 func = PacketFunction(self.frame[0])
                                 data = bytes(self.frame[2:])
-                                if func in self.parsers:
+                                if int(func) == PACKET_FUNC_MOTOR_SPEED and len(data) >= 6:
+                                    self.packet_report_motor_speed(data)
+                                elif func in self.parsers:
                                     self.parsers[func](data)
                             else:
                                 print("校验失败")

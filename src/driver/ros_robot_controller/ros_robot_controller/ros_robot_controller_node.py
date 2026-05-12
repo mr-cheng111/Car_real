@@ -15,7 +15,7 @@ from std_msgs.msg import UInt16, Bool
 from geometry_msgs.msg import Twist
 from ros_robot_controller.ros_robot_controller_sdk import Board
 from ros_robot_controller_msgs.srv import GetBusServoState, GetPWMServoState
-from ros_robot_controller_msgs.msg import ButtonState, BuzzerState, LedState, BusServoState, SetBusServoState, ServosPosition, SetPWMServoState, Sbus, OLEDState
+from ros_robot_controller_msgs.msg import ButtonState, BuzzerState, LedState, BusServoState, MotorState, MotorsState, SetBusServoState, ServosPosition, SetPWMServoState, Sbus, OLEDState
 
 
 def _clip(value, low, high):
@@ -32,12 +32,23 @@ class RosRobotController(Node):
         self.declare_parameter('imu_frame', 'imu_link')
         self.declare_parameter('init_finish', False)
         self.declare_parameter('cmd_vel_topic', '/cmd_vel')
-        self.declare_parameter('wheel_track', 0.20)
-        self.declare_parameter('wheel_diameter', 0.10)
+        self.declare_parameter('wheel_track', 0.2948)
+        self.declare_parameter('wheel_diameter', 0.035)
         self.declare_parameter('motor_gain', 30.0)
         self.declare_parameter('max_motor_speed', 100.0)
         self.declare_parameter('cmd_vel_timeout', 0.5)
         self.declare_parameter('publish_imu', True)
+        self.declare_parameter('motor_speed_topic', '/motor_speed')
+        self.declare_parameter('motor_speed_raw_topic', '/motor_speed/raw')
+        self.declare_parameter('motor_speed_scale', 1.0)
+        self.declare_parameter('left_speed_offset', 0)
+        self.declare_parameter('right_speed_offset', 4)
+        self.declare_parameter('control_rate', 50.0)
+        self.declare_parameter('enable_speed_closed_loop', True)
+        self.declare_parameter('speed_kp', 6.0)
+        self.declare_parameter('speed_ki', 1.0)
+        self.declare_parameter('speed_kd', 0.0)
+        self.declare_parameter('speed_integral_limit', 50.0)
         self.device = str(self.get_parameter('device').value)
         self.baudrate = int(self.get_parameter('baudrate').value)
         self.IMU_FRAME = self.get_parameter('imu_frame').value
@@ -48,18 +59,41 @@ class RosRobotController(Node):
         self.max_motor_speed = abs(float(self.get_parameter('max_motor_speed').value))
         self.cmd_vel_timeout = float(self.get_parameter('cmd_vel_timeout').value)
         self.publish_imu = bool(self.get_parameter('publish_imu').value)
+        self.motor_speed_topic = str(self.get_parameter('motor_speed_topic').value)
+        self.motor_speed_raw_topic = str(self.get_parameter('motor_speed_raw_topic').value)
+        self.motor_speed_scale = float(self.get_parameter('motor_speed_scale').value)
+        self.left_speed_offset = int(self.get_parameter('left_speed_offset').value)
+        self.right_speed_offset = int(self.get_parameter('right_speed_offset').value)
+        self.control_rate = max(1.0, float(self.get_parameter('control_rate').value))
+        self.enable_speed_closed_loop = bool(self.get_parameter('enable_speed_closed_loop').value)
+        self.speed_kp = float(self.get_parameter('speed_kp').value)
+        self.speed_ki = float(self.get_parameter('speed_ki').value)
+        self.speed_kd = float(self.get_parameter('speed_kd').value)
+        self.speed_integral_limit = abs(float(self.get_parameter('speed_integral_limit').value))
         self.board = Board(device=self.device, baudrate=self.baudrate)
         self.board.enable_reception()
         self.running = True
         self.last_cmd_vel_time = time.monotonic()
+        self.last_control_time = time.monotonic()
+        self.last_motor_speed_time = 0.0
         self.has_cmd_vel = False
         self.motors_stopped = True
+        self.target_left_rps = 0.0
+        self.target_right_rps = 0.0
+        self.measured_left_rps = 0.0
+        self.measured_right_rps = 0.0
+        self.left_error_integral = 0.0
+        self.right_error_integral = 0.0
+        self.last_left_error = 0.0
+        self.last_right_error = 0.0
 
         self.imu_pub = self.create_publisher(Imu, '~/imu_raw', 1)
         self.joy_pub = self.create_publisher(Joy, '~/joy', 1)
         self.sbus_pub = self.create_publisher(Sbus, '~/sbus', 1)
         self.button_pub = self.create_publisher(ButtonState, '~/button', 1)
         self.battery_pub = self.create_publisher(UInt16, '~/battery', 1)
+        self.motor_speed_pub = self.create_publisher(MotorsState, self.motor_speed_topic, 10)
+        self.motor_speed_raw_pub = self.create_publisher(MotorsState, self.motor_speed_raw_topic, 10)
         self.create_subscription(LedState, '~/set_led', self.set_led_state, 5)
         self.create_subscription(BuzzerState, '~/set_buzzer', self.set_buzzer_state, 5)
         self.create_subscription(OLEDState, '~/set_oled', self.set_oled_state, 5)
@@ -76,10 +110,11 @@ class RosRobotController(Node):
         self.clock = self.get_clock()
         threading.Thread(target=self.pub_callback, daemon=True).start()
         self.create_timer(0.1, self.cmd_vel_watchdog)
+        self.create_timer(1.0 / self.control_rate, self.control_loop)
         self.create_service(Trigger, '~/init_finish', self.get_node_state)
         self.get_logger().info(
-            '\033[1;32mstart: device=%s baudrate=%d cmd_vel_topic=%s wheel_track=%.3f wheel_diameter=%.3f motor_gain=%.2f publish_imu=%s\033[0m'
-            % (self.device, self.baudrate, self.cmd_vel_topic, self.wheel_track, self.wheel_diameter, self.motor_gain, self.publish_imu)
+            '\033[1;32mstart: device=%s baudrate=%d cmd_vel_topic=%s wheel_track=%.3f wheel_diameter=%.3f motor_gain=%.2f closed_loop=%s publish_imu=%s\033[0m'
+            % (self.device, self.baudrate, self.cmd_vel_topic, self.wheel_track, self.wheel_diameter, self.motor_gain, self.enable_speed_closed_loop, self.publish_imu)
         )
 
     def get_node_state(self, request, response):
@@ -95,6 +130,7 @@ class RosRobotController(Node):
                     self.pub_imu_data(self.imu_pub)
                 self.pub_sbus_data(self.sbus_pub)
                 self.pub_battery_data(self.battery_pub)
+                self.pub_motor_speed_data()
                 time.sleep(0.02)
             else:
                 time.sleep(0.02)
@@ -116,9 +152,33 @@ class RosRobotController(Node):
             return 0.0
         return speed / (math.pi * self.wheel_diameter) * self.motor_gain
 
+    def _linear_speed_to_rps(self, speed):
+        if self.wheel_diameter <= 0.0:
+            return 0.0
+        # 滚动约束: v = pi * D * n，因此轮子转速 n = v / (pi * D)，单位 rps。
+        return speed / (math.pi * self.wheel_diameter)
+
     def _stop_motors(self):
         self.board.set_motor_speed([[1, 0.0], [2, 0.0], [3, 0.0], [4, 0.0]])
         self.motors_stopped = True
+        self.target_left_rps = 0.0
+        self.target_right_rps = 0.0
+        self.left_error_integral = 0.0
+        self.right_error_integral = 0.0
+        self.last_left_error = 0.0
+        self.last_right_error = 0.0
+
+    def _pid_motor_speed(self, target_rps, measured_rps, integral, last_error, dt):
+        feedforward = target_rps * self.motor_gain
+        if not self.enable_speed_closed_loop or self.last_motor_speed_time <= 0.0:
+            return feedforward, integral, target_rps - measured_rps
+
+        error = target_rps - measured_rps
+        integral += error * dt
+        integral = _clip(integral, -self.speed_integral_limit, self.speed_integral_limit)
+        derivative = (error - last_error) / dt if dt > 0.0 else 0.0
+        correction = self.speed_kp * error + self.speed_ki * integral + self.speed_kd * derivative
+        return feedforward + correction, integral, error
 
     def cmd_vel_callback(self, msg):
         self.last_cmd_vel_time = time.monotonic()
@@ -127,19 +187,45 @@ class RosRobotController(Node):
         linear_speed = float(msg.linear.x)
         angular_speed = float(msg.angular.z)
 
-        # ROS convention: angular.z > 0 turns left (CCW).
-        # Hardware mapping: ID1 is right wheel reverse-positive, ID2 is left wheel forward-positive.
+        # ROS 约定: linear.x > 0 为车体 +X 前进，angular.z > 0 为逆时针左转。
+        # 差速逆解公式来源于车体中心速度:
+        # v_left = v + omega * L / 2, v_right = v - omega * L / 2。
+        # 当前硬件极性: ID1=右轮，正号为前进；ID2=左轮，正号为后退。
         left_linear = linear_speed + angular_speed * self.wheel_track / 2.0
         right_linear = linear_speed - angular_speed * self.wheel_track / 2.0
 
-        right_motor = -self._linear_speed_to_motor_speed(right_linear)
-        left_motor = self._linear_speed_to_motor_speed(left_linear)
-
-        right_motor = _clip(right_motor, -self.max_motor_speed, self.max_motor_speed)
-        left_motor = _clip(left_motor, -self.max_motor_speed, self.max_motor_speed)
-
-        self.board.set_motor_speed([[1, right_motor], [2, left_motor]])
+        self.target_left_rps = self._linear_speed_to_rps(left_linear)
+        self.target_right_rps = self._linear_speed_to_rps(right_linear)
         self.motors_stopped = linear_speed == 0.0 and angular_speed == 0.0
+
+    def control_loop(self):
+        now = time.monotonic()
+        dt = now - self.last_control_time
+        self.last_control_time = now
+        if dt <= 0.0:
+            return
+
+        if not self.has_cmd_vel or self.motors_stopped:
+            return
+
+        left_motor_forward, self.left_error_integral, self.last_left_error = self._pid_motor_speed(
+            self.target_left_rps,
+            self.measured_left_rps,
+            self.left_error_integral,
+            self.last_left_error,
+            dt,
+        )
+        right_motor_forward, self.right_error_integral, self.last_right_error = self._pid_motor_speed(
+            self.target_right_rps,
+            self.measured_right_rps,
+            self.right_error_integral,
+            self.last_right_error,
+            dt,
+        )
+
+        right_motor = _clip(right_motor_forward, -self.max_motor_speed, self.max_motor_speed)
+        left_motor = _clip(-left_motor_forward, -self.max_motor_speed, self.max_motor_speed)
+        self.board.set_motor_speed([[1, right_motor], [2, left_motor]])
 
     def cmd_vel_watchdog(self):
         if not self.has_cmd_vel or self.motors_stopped:
@@ -147,6 +233,38 @@ class RosRobotController(Node):
         if time.monotonic() - self.last_cmd_vel_time > self.cmd_vel_timeout:
             self.get_logger().warn('cmd_vel timeout, stopping motors')
             self._stop_motors()
+
+    def pub_motor_speed_data(self):
+        data = self.board.get_motor_speed(self.left_speed_offset, self.right_speed_offset)
+        if data is None:
+            return
+
+        raw_left, raw_right = data
+        self.last_motor_speed_time = time.monotonic()
+
+        raw_msg = MotorsState()
+        raw_left_msg = MotorState()
+        raw_left_msg.id = 2
+        raw_left_msg.rps = float(raw_left)
+        raw_right_msg = MotorState()
+        raw_right_msg.id = 1
+        raw_right_msg.rps = float(raw_right)
+        raw_msg.data = [raw_left_msg, raw_right_msg]
+        self.motor_speed_raw_pub.publish(raw_msg)
+
+        # 反馈统一到 ROS 车体坐标: 左右轮向车体 +X 滚动都为正。
+        self.measured_left_rps = -float(raw_left) * self.motor_speed_scale
+        self.measured_right_rps = float(raw_right) * self.motor_speed_scale
+
+        speed_msg = MotorsState()
+        left_msg = MotorState()
+        left_msg.id = 2
+        left_msg.rps = self.measured_left_rps
+        right_msg = MotorState()
+        right_msg.id = 1
+        right_msg.rps = self.measured_right_rps
+        speed_msg.data = [left_msg, right_msg]
+        self.motor_speed_pub.publish(speed_msg)
 
     def set_oled_state(self, msg):
         self.board.set_oled_text(int(msg.index), msg.text)

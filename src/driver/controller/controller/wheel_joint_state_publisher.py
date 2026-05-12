@@ -17,7 +17,7 @@ class WheelJointStatePublisher(Node):
         self.declare_parameter('joint_states_topic', '/joint_states')
         self.declare_parameter('left_wheel_joint_name', 'left_wheel_joint')
         self.declare_parameter('right_wheel_joint_name', 'right_wheel_joint')
-        self.declare_parameter('wheel_radius', 0.05)
+        self.declare_parameter('wheel_radius', 0.0175)
         self.declare_parameter('wheel_track', 0.2948)
         self.declare_parameter('publish_rate', 30.0)
 

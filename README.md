@@ -51,7 +51,11 @@ sudo apt install -y \
 ros2 launch robot_bringup mapping.launch.py
 ```
 
-建图链路会启动雷达、IMU、底盘控制、RF2O、EKF、Cartographer 和 RViz。建图时可以用键盘遥控小车移动。
+建图链路会启动雷达、IMU、底盘控制、RF2O、EKF、Cartographer 和 RViz。底盘运动命令来自导航或外部发布到 `/cmd_vel` 的上层控制节点；手动建图时使用系统安装的 `teleop_twist_keyboard` 控制小车：
+
+```bash
+ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r cmd_vel:=/cmd_vel
+```
 
 建图完成后，先保存 Cartographer `.pbstream`，再关闭建图：
 
@@ -199,7 +203,7 @@ ros2 run tf2_ros tf2_echo map odom
 ros2 run tf2_ros tf2_echo odom base_footprint
 ```
 
-检查速度控制：
+检查键盘控制或其他上层速度命令：
 
 ```bash
 ros2 topic echo /cmd_vel

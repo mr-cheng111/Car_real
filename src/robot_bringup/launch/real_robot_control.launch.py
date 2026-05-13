@@ -44,7 +44,6 @@ def generate_launch_description():
             ),
             launch_arguments={
                 'use_sim_time': LaunchConfiguration('use_sim_time'),
-                'enable_teleop': 'true',
                 'use_rviz': LaunchConfiguration('use_rviz'),
                 'enable_auto_navigation': 'false',
                 'enable_frontier_exploration': 'false',

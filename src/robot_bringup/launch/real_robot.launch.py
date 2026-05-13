@@ -20,7 +20,6 @@ def generate_launch_description():
     rplidar_share = get_package_share_directory('rplidar_ros')
 
     use_sim_time = LaunchConfiguration('use_sim_time')
-    enable_teleop = LaunchConfiguration('enable_teleop')
     use_rviz = LaunchConfiguration('use_rviz')
     enable_auto_navigation = LaunchConfiguration('enable_auto_navigation')
     enable_frontier_exploration = LaunchConfiguration('enable_frontier_exploration')
@@ -154,6 +153,8 @@ def generate_launch_description():
         parameters=[{
             'motor_speed_topic': motor_speed_topic,
             'motor_speed_unit': motor_speed_unit,
+            'left_wheel_joint_direction': -1.0,
+            'right_wheel_joint_direction': -1.0,
             'wheel_radius': 0.0175,
         }],
     )
@@ -284,19 +285,8 @@ def generate_launch_description():
         condition=IfCondition(use_rviz),
     )
 
-    teleop_key_node = Node(
-        package='peripherals',
-        executable='teleop_key_control',
-        name='teleop_key_control',
-        output='screen',
-        prefix='xterm -e',
-        remappings=[('cmd_vel', cmd_vel_topic)],
-        condition=IfCondition(enable_teleop),
-    )
-
     return LaunchDescription([
         DeclareLaunchArgument('use_sim_time', default_value='false'),
-        DeclareLaunchArgument('enable_teleop', default_value='false'),
         DeclareLaunchArgument('use_rviz', default_value='true'),
         DeclareLaunchArgument('enable_auto_navigation', default_value='true'),
         DeclareLaunchArgument('enable_frontier_exploration', default_value='true'),
@@ -360,5 +350,4 @@ def generate_launch_description():
         nav2_navigation,
         frontier_explorer,
         rviz_node,
-        teleop_key_node,
     ])

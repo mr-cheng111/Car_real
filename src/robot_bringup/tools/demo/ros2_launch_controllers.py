@@ -205,9 +205,7 @@ class MappingController(LaunchProcessController):
             name="mapping",
             package=os.environ.get("ROBOT_BRINGUP_MAPPING_PACKAGE", "robot_bringup"),
             launch_file=os.environ.get("ROBOT_BRINGUP_MAPPING_LAUNCH", "mapping.launch.py"),
-            default_args={
-                "enable_teleop": "false",
-            },
+            default_args={},
             log_dir=log_dir,
         )
 

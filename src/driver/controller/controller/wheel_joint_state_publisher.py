@@ -20,6 +20,8 @@ class WheelJointStatePublisher(Node):
         self.declare_parameter('right_wheel_joint_name', 'right_wheel_joint')
         self.declare_parameter('left_motor_id', 2)
         self.declare_parameter('right_motor_id', 1)
+        self.declare_parameter('left_wheel_joint_direction', -1.0)
+        self.declare_parameter('right_wheel_joint_direction', -1.0)
         self.declare_parameter('wheel_radius', 0.0175)
         self.declare_parameter('motor_speed_unit', 'rpm')
         self.declare_parameter('motor_speed_timeout', 0.2)
@@ -31,6 +33,8 @@ class WheelJointStatePublisher(Node):
         self.right_wheel_joint_name = str(self.get_parameter('right_wheel_joint_name').value)
         self.left_motor_id = int(self.get_parameter('left_motor_id').value)
         self.right_motor_id = int(self.get_parameter('right_motor_id').value)
+        self.left_wheel_joint_direction = float(self.get_parameter('left_wheel_joint_direction').value)
+        self.right_wheel_joint_direction = float(self.get_parameter('right_wheel_joint_direction').value)
         self.wheel_radius = float(self.get_parameter('wheel_radius').value)
         self.motor_speed_unit = str(self.get_parameter('motor_speed_unit').value).lower()
         self.motor_speed_timeout = float(self.get_parameter('motor_speed_timeout').value)
@@ -78,8 +82,8 @@ class WheelJointStatePublisher(Node):
         if left_speed is None or right_speed is None:
             return
 
-        self.left_velocity = self.speed_to_rad_per_sec(left_speed)
-        self.right_velocity = self.speed_to_rad_per_sec(right_speed)
+        self.left_velocity = self.left_wheel_joint_direction * self.speed_to_rad_per_sec(left_speed)
+        self.right_velocity = self.right_wheel_joint_direction * self.speed_to_rad_per_sec(right_speed)
         self.last_motor_speed_time = time.time()
 
     def publish_joint_states(self) -> None:

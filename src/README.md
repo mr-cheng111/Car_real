@@ -57,7 +57,6 @@ rosdep update
 - `ros_robot_controller`：下位机控制板驱动，订阅 `/cmd_vel` 控制底盘。
 - `ros_robot_controller_msgs`：下位机控制板消息和服务定义。
 - `controller`：当前从 `/cmd_vel` 积分生成 `/odom_raw`。
-- `peripherals`：只保留键盘遥控，发布 `/cmd_vel`。
 
 说明：
 
@@ -118,12 +117,6 @@ ros2 launch robot_bringup mapping.launch.py
 ros2 launch robot_bringup mapping.launch.py lidar_serial_port:=/dev/ttyUSB0
 ```
 
-如果不想启动键盘遥控：
-
-```bash
-ros2 launch robot_bringup mapping.launch.py enable_teleop:=false
-```
-
 如果不想把 `/odom_rf2o` 融入 EKF：
 
 ```bash
@@ -144,7 +137,6 @@ ros2 launch robot_bringup mapping.launch.py use_rf2o_in_ekf:=false
 | `imu_cartographer_publisher` | `imu_cartographer_publisher` | 外部 IMU I2C 数据 | `/imu` | 外部 IMU 发布器，给 EKF 融合 yaw 角速度，也给 Cartographer 做 tracking frame 输入；RF2O 也用它初始化初始姿态。 |
 | `ros_robot_controller` | `ros_robot_controller` | `/cmd_vel`、舵机/LED/蜂鸣器等控制 topic/service | 电机串口指令、`~/battery`、`~/button`、`~/joy`、`~/sbus`，可选 `~/imu_raw` | 下位机控制板驱动。当前建图启动中 `publish_imu: false`，所以板载 IMU 不进入建图链路；底盘真实动作由这里接收 `/cmd_vel` 后下发给电机。 |
 | `ros_robot_controller_msgs` | 消息/服务定义 | 无运行节点 | 自定义 msg/srv 类型 | 供 `ros_robot_controller` 的舵机、LED、蜂鸣器、按钮、SBUS 等接口使用。 |
-| `peripherals` | `teleop_key_control` | 键盘按键 | `/cmd_vel` | 默认通过 `xterm` 启动，发布底盘速度命令；可用 `enable_teleop:=false` 关闭。 |
 | `controller` | `odom_publisher` | `/cmd_vel`、`set_odom` | `/odom_raw`、`set_pose`、`controller/load_calibrate_param` | 当前不是读编码器，而是把 `/cmd_vel` 积分成命令里程计 `/odom_raw`，主要给 EKF 一个速度/短时位姿参考。 |
 | `rf2o_laser_odometry` | `rf2o_laser_odometry_node` | `/scan`、`/tf`、初始 `/imu` | `/odom_rf2o` | 由连续激光帧估计平面里程计。当前 `publish_tf: false`，只发布 topic，避免和 EKF 重复发布 `odom -> base_footprint`。 |
 | `robot_localization` | `ekf_node` | `/odom_raw`、`/imu`，可选 `/odom_rf2o` | `/odom`、`odom -> base_footprint` TF | 融合层。`use_rf2o_in_ekf:=true` 时使用 `ekf_external_imu_rf2o.yaml`，否则只用 `/odom_raw + /imu`。 |
@@ -181,7 +173,7 @@ C1 雷达硬件
 ```
 
 ```text
-键盘遥控或导航
+导航或外部上层控制节点
   -> /cmd_vel
   -> ros_robot_controller
   -> 下位机/电机
@@ -197,7 +189,13 @@ C1 雷达硬件
 
 ### 6.3 控制数据如何来
 
-实机建图默认控制来源是 `peripherals` 包的 `teleop_key_control`。它读取键盘 `w/a/s/d`，发布 `geometry_msgs/Twist` 到 `/cmd_vel`。
+实机建图不再默认启动工作区内的键盘遥控节点。手动控制小车时，使用系统安装的 `teleop_twist_keyboard` 发布 `/cmd_vel`：
+
+```bash
+ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r cmd_vel:=/cmd_vel
+```
+
+导航或其他外部上层控制节点也可以直接发布 `/cmd_vel`。
 
 同一个 `/cmd_vel` 会被两个节点订阅：
 
@@ -228,7 +226,6 @@ C1 雷达硬件
 - `imu_frame`：外部 IMU frame，默认 `imu_link`。
 - `base_frame`：机器人底盘运动 frame，默认 `base_footprint`。
 - `use_rf2o_in_ekf`：是否把 `/odom_rf2o` 加入 EKF，默认 `true`。
-- `enable_teleop`：是否启动键盘遥控，默认 `true`。
 - `map_resolution`：Cartographer occupancy grid 分辨率，默认 `0.05`。
 - `imu_i2c_bus`：外部 IMU I2C bus，默认 `4`。
 - `imu_device_addr`：外部 IMU 地址，默认 `0x6A`。
@@ -286,7 +283,7 @@ ros2 run tf2_tools view_frames
 
 - `/scan`：C1 雷达扫描。
 - `/imu`：外部 IMU。
-- `/cmd_vel`：键盘遥控或其他上层控制命令。
+- `/cmd_vel`：`teleop_twist_keyboard`、导航或其他上层控制命令。
 - `/odom_raw`：由 `/cmd_vel` 积分得到的命令里程计。
 - `/odom_rf2o`：激光里程计。
 - `/odom`：EKF 输出。
@@ -312,17 +309,7 @@ ros2 run tf2_tools view_frames
 - 雷达：`laser_link`
 - IMU：`imu_link`
 
-## 10. 键盘遥控
-
-默认会启动 `peripherals` 中的 `teleop_key_control`，使用 `xterm` 打开。
-
-如果机器没有图形界面，建议关闭：
-
-```bash
-ros2 launch robot_bringup mapping.launch.py enable_teleop:=false
-```
-
-## 11. Demo 工具
+## 10. Demo 工具
 
 原始 `/home/mr-cheng/Downloads/src/demo` 依赖 `exploration` 包和 `/exploration/goal`，当前工作区没有这些内容，所以不能原样使用。
 
@@ -337,12 +324,12 @@ ros2 run robot_bringup visual_map_annotator.py --list-points
 
 当前 demo 行为：
 
-- `controller_cli.py mapping` 启动 `robot_bringup mapping.launch.py enable_teleop:=false`。
+- `controller_cli.py mapping` 启动 `robot_bringup mapping.launch.py`。
 - `controller_cli.py navigation` 默认不可用，避免把导航依赖带入建图链路。
 - 如以后确定导航包，再设置 `ROBOT_BRINGUP_NAVIGATION_PACKAGE` 和 `ROBOT_BRINGUP_NAVIGATION_LAUNCH`。
 - `visual_map_annotator.py` 依赖 `/map`，用于查看和保存命名点。
 
-## 12. 常见问题
+## 11. 常见问题
 
 ### 雷达没有 `/scan`
 

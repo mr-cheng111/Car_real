@@ -142,6 +142,8 @@ def generate_launch_description():
         parameters=[{
             'motor_speed_topic': motor_speed_topic,
             'motor_speed_unit': motor_speed_unit,
+            'left_wheel_joint_direction': -1.0,
+            'right_wheel_joint_direction': -1.0,
             'wheel_radius': 0.0175,
         }],
     )

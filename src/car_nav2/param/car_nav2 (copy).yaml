@@ -34,15 +34,15 @@ amcl:
     # 激光似然场最大有效距离
     laser_likelihood_max_dist: 2.0
     # 激光最大量程（用于AMCL）
-    laser_max_range: 100.0
-    # 激光最小量程（-1表示沿用传感器）
-    laser_min_range: -1.0
+    laser_max_range: 10.0
+    # 激光最小量程
+    laser_min_range: 0.2
     # 激光模型类型
     laser_model_type: "likelihood_field"
     # 每帧用于匹配的最大光束数
     max_beams: 60
     # 粒子滤波最大粒子数
-    max_particles: 2000
+    max_particles: 3000
     # 粒子滤波最小粒子数
     min_particles: 500
     # 里程计坐标系
@@ -232,7 +232,7 @@ controller_server:
     # 是否使用仿真时间
     use_sim_time: False
     # 控制器主循环频率（Hz）
-    controller_frequency: 20.0
+    controller_frequency: 10.0
     # x方向最小速度阈值（低于该值视为0）
     min_x_velocity_threshold: 0.001
     # y方向最小速度阈值（差速车通常为0）
@@ -276,29 +276,29 @@ controller_server:
       # 最小y速度（m/s）
       min_vel_y: 0.0
       # 最大x速度（m/s）
-      max_vel_x: 0.26
+      max_vel_x: 0.4
       # 最大y速度（m/s）
       max_vel_y: 0.0
       # 最大角速度（rad/s）
-      max_vel_theta: 0.5
+      max_vel_theta: 1.0
       # 最小平面速度（m/s）
       min_speed_xy: 0.0
       # 最大平面速度（m/s）
-      max_speed_xy: 0.26
+      max_speed_xy: 0.4
       # 最小角速度（rad/s）
       min_speed_theta: 0.0
       # x方向最大加速度（m/s^2）
-      acc_lim_x: 1.0
+      acc_lim_x: 2.5
       # y方向最大加速度（m/s^2）
       acc_lim_y: 0.0
       # 最大角加速度（rad/s^2）
-      acc_lim_theta: 1.0
+      acc_lim_theta: 3.2
       # x方向最大减速度（m/s^2，负值）
-      decel_lim_x: -1.0
+      decel_lim_x: -2.5
       # y方向最大减速度（m/s^2）
       decel_lim_y: 0.0
       # 最大角减速度（rad/s^2，负值）
-      decel_lim_theta: -1.0
+      decel_lim_theta: -3.2
       # x速度采样数
       vx_samples: 20
       # y速度采样数
@@ -374,7 +374,7 @@ local_costmap:
         # 膨胀层插件
         plugin: "nav2_costmap_2d::InflationLayer"
         # 代价衰减因子
-        cost_scaling_factor: 3.0
+        cost_scaling_factor: 5.0
         # 膨胀半径（米）
         inflation_radius: 0.25
 
@@ -410,7 +410,7 @@ local_costmap:
           # 数据类型
           data_type: "LaserScan"
           # 射线清除最大距离
-          raytrace_max_range: 3.1415
+          raytrace_max_range: 3.0
           # 射线清除最小距离
           raytrace_min_range: 0.0
           # 障碍检测最大距离
@@ -431,7 +431,7 @@ global_costmap:
   global_costmap:
     ros__parameters:
       # 全局代价地图更新频率（Hz）
-      update_frequency: 1.0
+      update_frequency: 2.0
       # 全局代价地图发布频率（Hz）
       publish_frequency: 1.0
       # 全局坐标系
@@ -469,7 +469,7 @@ global_costmap:
           # 数据类型
           data_type: "LaserScan"
           # 射线清除最大距离
-          raytrace_max_range: 3.14
+          raytrace_max_range: 3.0
           # 射线清除最小距离
           raytrace_min_range: 0.0
           # 障碍检测最大距离
@@ -487,7 +487,7 @@ global_costmap:
         # 膨胀层插件
         plugin: "nav2_costmap_2d::InflationLayer"
         # 代价衰减因子
-        cost_scaling_factor: 3.0
+        cost_scaling_factor: 10.0
         # 膨胀半径（米）
         inflation_radius: 0.25
 
@@ -517,7 +517,7 @@ map_saver:
 planner_server:
   ros__parameters:
     # 期望规划频率（Hz）
-    expected_planner_frequency: 20.0
+    expected_planner_frequency: 10.0
     # 是否使用仿真时间
     use_sim_time: False
     # 规划器插件列表
@@ -528,7 +528,7 @@ planner_server:
       plugin: "nav2_navfn_planner/NavfnPlanner"
       # 目标容差（米）
       tolerance: 0.5
-      # 是否使用A*（false为Dijkstra）
+      # 是否使用A*（false为Dijkstra/NavFn）
       use_astar: false
       # 是否允许经过未知区域
       allow_unknown: true

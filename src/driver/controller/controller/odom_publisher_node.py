@@ -96,6 +96,7 @@ class Controller(Node):
         self.declare_parameter('motor_speed_topic', '/motor_speed')
         self.declare_parameter('wheel_diameter', 0.035)
         self.declare_parameter('wheel_track', 0.2948)
+        self.declare_parameter('motor_speed_unit', 'rpm')
         self.declare_parameter('left_motor_id', 2)
         self.declare_parameter('right_motor_id', 1)
         self.declare_parameter('motor_speed_timeout', 0.2)
@@ -110,9 +111,11 @@ class Controller(Node):
         self.motor_speed_topic = str(self.get_parameter('motor_speed_topic').value)
         self.wheel_diameter = float(self.get_parameter('wheel_diameter').value)
         self.wheel_track = float(self.get_parameter('wheel_track').value)
+        self.motor_speed_unit = str(self.get_parameter('motor_speed_unit').value).lower()
         self.left_motor_id = int(self.get_parameter('left_motor_id').value)
         self.right_motor_id = int(self.get_parameter('right_motor_id').value)
         self.motor_speed_timeout = float(self.get_parameter('motor_speed_timeout').value)
+        self.warned_invalid_motor_speed_unit = False
 
         self.clock = self.get_clock() 
         if self.pub_odom_topic:
@@ -141,6 +144,19 @@ class Controller(Node):
 
         self.create_service(Trigger, '~/init_finish', self.get_node_state)
         self.get_logger().info('\033[1;32m%s\033[0m' % 'start')
+
+    def speed_to_rps(self, speed):
+        if self.motor_speed_unit == 'rpm':
+            return speed / 60.0
+        if self.motor_speed_unit == 'rps':
+            return speed
+
+        if not self.warned_invalid_motor_speed_unit:
+            self.get_logger().warn(
+                'unsupported motor_speed_unit "%s", treating feedback as rpm' % self.motor_speed_unit
+            )
+            self.warned_invalid_motor_speed_unit = True
+        return speed / 60.0
 
     def get_node_state(self, request, response):
         response.success = True
@@ -195,23 +211,25 @@ class Controller(Node):
             self.angular_z = self.cmd_angular_z
 
     def motor_speed_callback(self, msg):
-        left_rps = None
-        right_rps = None
+        left_speed = None
+        right_speed = None
         for motor in msg.data:
             if motor.id == self.left_motor_id:
-                left_rps = float(motor.rps)
+                left_speed = float(motor.rps)
             elif motor.id == self.right_motor_id:
-                right_rps = float(motor.rps)
+                right_speed = float(motor.rps)
 
-        if left_rps is None or right_rps is None:
+        if left_speed is None or right_speed is None:
             return
         if self.wheel_diameter <= 0.0 or self.wheel_track <= 0.0:
             return
 
         # 轮速反解算:
-        # 滚动约束 v_wheel = pi * D * n，其中 n 为 rps。
+        # 滚动约束 v_wheel = pi * D * n，其中 n 为 rps；反馈可配置为 rpm/rps。
         # 差速模型 v_l = v + omega * L / 2, v_r = v - omega * L / 2，
         # 因此 v = (v_l + v_r) / 2, omega = (v_l - v_r) / L。
+        left_rps = self.speed_to_rps(left_speed)
+        right_rps = self.speed_to_rps(right_speed)
         left_linear = math.pi * self.wheel_diameter * left_rps
         right_linear = math.pi * self.wheel_diameter * right_rps
         self.linear_x = (left_linear + right_linear) / 2.0

@@ -46,6 +46,7 @@ def generate_launch_description():
     wheel_track = LaunchConfiguration('wheel_track')
     wheel_diameter = LaunchConfiguration('wheel_diameter')
     motor_speed_topic = LaunchConfiguration('motor_speed_topic')
+    motor_speed_unit = LaunchConfiguration('motor_speed_unit')
     motor_speed_scale = LaunchConfiguration('motor_speed_scale')
     enable_speed_closed_loop = LaunchConfiguration('enable_speed_closed_loop')
     speed_kp = LaunchConfiguration('speed_kp')
@@ -116,6 +117,7 @@ def generate_launch_description():
             'wheel_track': wheel_track,
             'wheel_diameter': wheel_diameter,
             'motor_speed_topic': motor_speed_topic,
+            'motor_speed_unit': motor_speed_unit,
             'motor_speed_scale': motor_speed_scale,
             'enable_speed_closed_loop': enable_speed_closed_loop,
             'speed_kp': speed_kp,
@@ -137,6 +139,7 @@ def generate_launch_description():
                 'pub_odom_topic': True,
                 'use_wheel_speed_feedback': True,
                 'motor_speed_topic': motor_speed_topic,
+                'motor_speed_unit': motor_speed_unit,
                 'wheel_track': wheel_track,
                 'wheel_diameter': wheel_diameter,
             },
@@ -149,9 +152,9 @@ def generate_launch_description():
         name='wheel_joint_state_publisher',
         output='screen',
         parameters=[{
-            'cmd_vel_topic': cmd_vel_topic,
+            'motor_speed_topic': motor_speed_topic,
+            'motor_speed_unit': motor_speed_unit,
             'wheel_radius': 0.0175,
-            'wheel_track': wheel_track,
         }],
     )
 
@@ -307,6 +310,7 @@ def generate_launch_description():
         DeclareLaunchArgument('wheel_track', default_value='0.2948'),
         DeclareLaunchArgument('wheel_diameter', default_value='0.035'),
         DeclareLaunchArgument('motor_speed_topic', default_value='/motor_speed'),
+        DeclareLaunchArgument('motor_speed_unit', default_value='rpm'),
         DeclareLaunchArgument('motor_speed_scale', default_value='1.0'),
         DeclareLaunchArgument('enable_speed_closed_loop', default_value='true'),
         DeclareLaunchArgument('speed_kp', default_value='6.0'),

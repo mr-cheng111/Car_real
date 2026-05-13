@@ -41,6 +41,7 @@ class RosRobotController(Node):
         self.declare_parameter('motor_speed_topic', '/motor_speed')
         self.declare_parameter('motor_speed_raw_topic', '/motor_speed/raw')
         self.declare_parameter('motor_speed_scale', 1.0)
+        self.declare_parameter('motor_speed_unit', 'rpm')
         self.declare_parameter('left_speed_offset', 0)
         self.declare_parameter('right_speed_offset', 4)
         self.declare_parameter('control_rate', 50.0)
@@ -62,6 +63,7 @@ class RosRobotController(Node):
         self.motor_speed_topic = str(self.get_parameter('motor_speed_topic').value)
         self.motor_speed_raw_topic = str(self.get_parameter('motor_speed_raw_topic').value)
         self.motor_speed_scale = float(self.get_parameter('motor_speed_scale').value)
+        self.motor_speed_unit = str(self.get_parameter('motor_speed_unit').value).lower()
         self.left_speed_offset = int(self.get_parameter('left_speed_offset').value)
         self.right_speed_offset = int(self.get_parameter('right_speed_offset').value)
         self.control_rate = max(1.0, float(self.get_parameter('control_rate').value))
@@ -86,6 +88,7 @@ class RosRobotController(Node):
         self.right_error_integral = 0.0
         self.last_left_error = 0.0
         self.last_right_error = 0.0
+        self.warned_invalid_motor_speed_unit = False
 
         self.imu_pub = self.create_publisher(Imu, '~/imu_raw', 1)
         self.joy_pub = self.create_publisher(Joy, '~/joy', 1)
@@ -157,6 +160,19 @@ class RosRobotController(Node):
             return 0.0
         # 滚动约束: v = pi * D * n，因此轮子转速 n = v / (pi * D)，单位 rps。
         return speed / (math.pi * self.wheel_diameter)
+
+    def _feedback_speed_to_rps(self, speed):
+        if self.motor_speed_unit == 'rpm':
+            return speed / 60.0
+        if self.motor_speed_unit == 'rps':
+            return speed
+
+        if not self.warned_invalid_motor_speed_unit:
+            self.get_logger().warn(
+                'unsupported motor_speed_unit "%s", treating feedback as rpm' % self.motor_speed_unit
+            )
+            self.warned_invalid_motor_speed_unit = True
+        return speed / 60.0
 
     def _stop_motors(self):
         self.board.set_motor_speed([[1, 0.0], [2, 0.0], [3, 0.0], [4, 0.0]])
@@ -253,16 +269,18 @@ class RosRobotController(Node):
         self.motor_speed_raw_pub.publish(raw_msg)
 
         # 反馈统一到 ROS 车体坐标: 左右轮向车体 +X 滚动都为正。
-        self.measured_left_rps = -float(raw_left) * self.motor_speed_scale
-        self.measured_right_rps = float(raw_right) * self.motor_speed_scale
+        left_speed = -float(raw_left) * self.motor_speed_scale
+        right_speed = float(raw_right) * self.motor_speed_scale
+        self.measured_left_rps = self._feedback_speed_to_rps(left_speed)
+        self.measured_right_rps = self._feedback_speed_to_rps(right_speed)
 
         speed_msg = MotorsState()
         left_msg = MotorState()
         left_msg.id = 2
-        left_msg.rps = self.measured_left_rps
+        left_msg.rps = left_speed
         right_msg = MotorState()
         right_msg.id = 1
-        right_msg.rps = self.measured_right_rps
+        right_msg.rps = right_speed
         speed_msg.data = [left_msg, right_msg]
         self.motor_speed_pub.publish(speed_msg)
 

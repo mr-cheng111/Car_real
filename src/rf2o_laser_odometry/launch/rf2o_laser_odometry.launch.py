@@ -31,6 +31,7 @@ def generate_launch_description():
                     'init_pose_from_imu_topic' : '/imu',
                     'motion_filter_linear_m' : 0.01,
                     'motion_filter_angular_rad' : 0.01,
+                    'odom_linear_direction' : -1.0,
                     'freq' : 12.0}],
             ),
     ])

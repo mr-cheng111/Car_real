@@ -32,6 +32,7 @@ public:
   std::string         init_pose_from_imu_topic;
   double              motion_filter_linear_m;
   double              motion_filter_angular_rad;
+  double              odom_linear_direction;
 
   sensor_msgs::msg::LaserScan                     last_scan;
   bool                                            GT_pose_initialized;

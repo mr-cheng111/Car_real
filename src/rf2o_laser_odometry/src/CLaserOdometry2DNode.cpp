@@ -43,6 +43,8 @@ CLaserOdometry2DNode::CLaserOdometry2DNode(): Node("CLaserOdometry2DNode")
   this->get_parameter("motion_filter_linear_m", motion_filter_linear_m);
   this->declare_parameter<double>("motion_filter_angular_rad", 0.0);
   this->get_parameter("motion_filter_angular_rad", motion_filter_angular_rad);
+  this->declare_parameter<double>("odom_linear_direction", -1.0);
+  this->get_parameter("odom_linear_direction", odom_linear_direction);
   this->declare_parameter<double>("freq", 10.0);
   this->get_parameter("freq", freq);
 
@@ -246,13 +248,13 @@ void CLaserOdometry2DNode::publish()
   odom.header.stamp = rf2o_ref.last_odom_time;    // the time of the last scan used!
   odom.header.frame_id = odom_frame_id;
   //set the position
-  odom.pose.pose.position.x = rf2o_ref.robot_pose_.translation()(0);
-  odom.pose.pose.position.y = rf2o_ref.robot_pose_.translation()(1);
+  odom.pose.pose.position.x = odom_linear_direction * rf2o_ref.robot_pose_.translation()(0);
+  odom.pose.pose.position.y = odom_linear_direction * rf2o_ref.robot_pose_.translation()(1);
   odom.pose.pose.position.z = 0.0;
   odom.pose.pose.orientation = quaternion;
   //set the velocity
   odom.child_frame_id = base_frame_id;
-  odom.twist.twist.linear.x = rf2o_ref.lin_speed;    //linear speed
+  odom.twist.twist.linear.x = odom_linear_direction * rf2o_ref.lin_speed;    //linear speed
   odom.twist.twist.linear.y = 0.0;
   odom.twist.twist.angular.z = rf2o_ref.ang_speed;   //angular speed
   //publish the message
@@ -266,8 +268,8 @@ void CLaserOdometry2DNode::publish()
     odom_trans.header.stamp = rf2o_ref.last_odom_time;    // the time of the last scan used!
     odom_trans.header.frame_id = odom_frame_id;
     odom_trans.child_frame_id = base_frame_id;
-    odom_trans.transform.translation.x = rf2o_ref.robot_pose_.translation()(0);
-    odom_trans.transform.translation.y = rf2o_ref.robot_pose_.translation()(1);
+    odom_trans.transform.translation.x = odom_linear_direction * rf2o_ref.robot_pose_.translation()(0);
+    odom_trans.transform.translation.y = odom_linear_direction * rf2o_ref.robot_pose_.translation()(1);
     odom_trans.transform.translation.z = 0.0;
     odom_trans.transform.rotation = quaternion;
     //send the transform

@@ -56,6 +56,7 @@ class LaunchProcessController:
 
         self._process: Optional[subprocess.Popen] = None
         self._log_fp = None
+        self._last_log_path: Optional[str] = None
         self._started_at: Optional[float] = None
         self._last_error: Optional[str] = None
         self._lock = threading.Lock()
@@ -138,6 +139,25 @@ class LaunchProcessController:
             cmd.append(f"{key}:={value}")
         return cmd
 
+    @staticmethod
+    def _tail_file(path: str, max_lines: int = 30) -> str:
+        try:
+            with open(path, "r", encoding="utf-8", errors="replace") as fp:
+                lines = fp.readlines()
+            return "".join(lines[-max_lines:]).strip()
+        except Exception:
+            return ""
+
+    def _record_start_exit(self, returncode: int) -> None:
+        detail = ""
+        if self._last_log_path:
+            tail = self._tail_file(self._last_log_path)
+            detail = f"; log={self._last_log_path}"
+            if tail:
+                detail += f"\n--- log tail ---\n{tail}"
+        self._last_error = f"start failed: launch exited early with code {returncode}{detail}"
+        self._cleanup_after_exit()
+
     def is_running(self) -> bool:
         if self._process is not None and self._process.poll() is None:
             return True
@@ -159,6 +179,7 @@ class LaunchProcessController:
 
             try:
                 self._log_fp = open(log_path, "a", encoding="utf-8")
+                self._last_log_path = log_path
 
                 creationflags = 0
                 if os.name == "nt":
@@ -174,6 +195,15 @@ class LaunchProcessController:
                 )
                 self._started_at = time.time()
                 self._write_pid_file(self._process.pid)
+
+                check_sec = float(os.environ.get("DEMO_LAUNCH_START_CHECK_SEC", "2.0"))
+                if check_sec > 0.0:
+                    time.sleep(check_sec)
+                    returncode = self._process.poll()
+                    if returncode is not None:
+                        self._record_start_exit(returncode)
+                        return False
+
                 return True
             except Exception as exc:
                 self._last_error = f"start failed: {exc}"

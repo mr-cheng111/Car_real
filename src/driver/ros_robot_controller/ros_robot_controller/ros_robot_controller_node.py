@@ -34,7 +34,7 @@ class RosRobotController(Node):
         self.declare_parameter('cmd_vel_topic', '/cmd_vel')
         self.declare_parameter('wheel_track', 0.2948)
         self.declare_parameter('wheel_diameter', 0.035)
-        self.declare_parameter('motor_gain', 30.0)
+        self.declare_parameter('motor_gain', 1.0)
         self.declare_parameter('max_motor_speed', 100.0)
         self.declare_parameter('cmd_vel_timeout', 0.5)
         self.declare_parameter('publish_imu', True)
@@ -42,6 +42,8 @@ class RosRobotController(Node):
         self.declare_parameter('motor_speed_raw_topic', '/motor_speed/raw')
         self.declare_parameter('motor_speed_scale', 1.0)
         self.declare_parameter('motor_speed_unit', 'rpm')
+        self.declare_parameter('left_feedback_sign', 1.0)
+        self.declare_parameter('right_feedback_sign', -1.0)
         self.declare_parameter('left_speed_offset', 0)
         self.declare_parameter('right_speed_offset', 4)
         self.declare_parameter('control_rate', 50.0)
@@ -64,6 +66,8 @@ class RosRobotController(Node):
         self.motor_speed_raw_topic = str(self.get_parameter('motor_speed_raw_topic').value)
         self.motor_speed_scale = float(self.get_parameter('motor_speed_scale').value)
         self.motor_speed_unit = str(self.get_parameter('motor_speed_unit').value).lower()
+        self.left_feedback_sign = float(self.get_parameter('left_feedback_sign').value)
+        self.right_feedback_sign = float(self.get_parameter('right_feedback_sign').value)
         self.left_speed_offset = int(self.get_parameter('left_speed_offset').value)
         self.right_speed_offset = int(self.get_parameter('right_speed_offset').value)
         self.control_rate = max(1.0, float(self.get_parameter('control_rate').value))
@@ -269,8 +273,8 @@ class RosRobotController(Node):
         self.motor_speed_raw_pub.publish(raw_msg)
 
         # 反馈统一到 ROS 车体坐标: 左右轮向车体 +X 滚动都为正。
-        left_speed = -float(raw_left) * self.motor_speed_scale
-        right_speed = float(raw_right) * self.motor_speed_scale
+        left_speed = float(raw_left) * self.motor_speed_scale * self.left_feedback_sign
+        right_speed = float(raw_right) * self.motor_speed_scale * self.right_feedback_sign
         self.measured_left_rps = self._feedback_speed_to_rps(left_speed)
         self.measured_right_rps = self._feedback_speed_to_rps(right_speed)
 

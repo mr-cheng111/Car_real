@@ -107,6 +107,8 @@ def generate_launch_description():
             'motor_speed_topic': motor_speed_topic,
             'motor_speed_unit': motor_speed_unit,
             'motor_speed_scale': motor_speed_scale,
+            'left_feedback_sign': 1.0,
+            'right_feedback_sign': -1.0,
             'enable_speed_closed_loop': enable_speed_closed_loop,
             'speed_kp': speed_kp,
             'speed_ki': speed_ki,
@@ -142,8 +144,8 @@ def generate_launch_description():
         parameters=[{
             'motor_speed_topic': motor_speed_topic,
             'motor_speed_unit': motor_speed_unit,
-            'left_wheel_joint_direction': -1.0,
-            'right_wheel_joint_direction': -1.0,
+            'left_wheel_joint_direction': 1.0,
+            'right_wheel_joint_direction': 1.0,
             'wheel_radius': 0.0175,
         }],
     )

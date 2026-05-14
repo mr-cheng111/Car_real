@@ -143,6 +143,7 @@ def generate_launch_description():
                 'motor_speed_unit': motor_speed_unit,
                 'wheel_track': wheel_track,
                 'wheel_diameter': wheel_diameter,
+                'wheel_linear_direction': -1.0,
             },
         ],
     )

@@ -100,6 +100,7 @@ class Controller(Node):
         self.declare_parameter('left_motor_id', 2)
         self.declare_parameter('right_motor_id', 1)
         self.declare_parameter('motor_speed_timeout', 0.2)
+        self.declare_parameter('wheel_linear_direction', -1.0)
         
         self.pub_odom_topic = self.get_parameter('pub_odom_topic').value
         self.base_frame_id = self.get_parameter('base_frame_id').value
@@ -115,6 +116,7 @@ class Controller(Node):
         self.left_motor_id = int(self.get_parameter('left_motor_id').value)
         self.right_motor_id = int(self.get_parameter('right_motor_id').value)
         self.motor_speed_timeout = float(self.get_parameter('motor_speed_timeout').value)
+        self.wheel_linear_direction = float(self.get_parameter('wheel_linear_direction').value)
         self.warned_invalid_motor_speed_unit = False
 
         self.clock = self.get_clock() 
@@ -232,7 +234,7 @@ class Controller(Node):
         right_rps = self.speed_to_rps(right_speed)
         left_linear = math.pi * self.wheel_diameter * left_rps
         right_linear = math.pi * self.wheel_diameter * right_rps
-        self.linear_x = (left_linear + right_linear) / 2.0
+        self.linear_x = self.wheel_linear_direction * (left_linear + right_linear) / 2.0
         self.linear_y = 0.0
         self.angular_z = (left_linear - right_linear) / self.wheel_track
         self.last_motor_speed_time = time.time()

@@ -71,7 +71,7 @@
       <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <cylinder length="0.03" radius="0.0175"/>
+        <cylinder length="0.03" radius="0.035"/>
       </geometry>
       <material name="yellow">
           <color rgba="1.0 1.0 0.0 0.8" /> 
@@ -80,7 +80,7 @@
     <collision>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
-          <cylinder length="0.03" radius="0.0175"/>
+          <cylinder length="0.03" radius="0.035"/>
         </geometry>
         <material name="black">
           <color rgba="0.0 0.0 0.0 0.5" /> 
@@ -106,7 +106,7 @@
       <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <cylinder length="0.03" radius="0.0175"/>
+        <cylinder length="0.03" radius="0.035"/>
       </geometry>
       <material name="yellow">
           <color rgba="1.0 1.0 0.0 0.8" /> 
@@ -115,7 +115,7 @@
     <collision>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
-          <cylinder length="0.03" radius="0.0175"/>
+          <cylinder length="0.03" radius="0.035"/>
         </geometry>
         <material name="black">
           <color rgba="0.0 0.0 0.0 0.5" /> 
@@ -301,7 +301,7 @@
           <right_joint>right_wheel_joint</right_joint>
           <!-- kinematics -->
           <wheel_separation>0.2948</wheel_separation>
-          <wheel_diameter>0.035</wheel_diameter>
+          <wheel_diameter>0.07</wheel_diameter>
           <!-- limits -->
           <max_wheel_torque>20</max_wheel_torque>
           <max_wheel_acceleration>1.0</max_wheel_acceleration>

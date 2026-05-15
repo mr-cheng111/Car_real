@@ -10,6 +10,7 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
+    source_rviz_config = '/home/mr-cheng/Car_real/src/robot_bringup/config/default.rviz'
     car_nav2_share = get_package_share_directory('car_nav2')
     bringup_share = get_package_share_directory('robot_bringup')
     controller_share = get_package_share_directory('controller')
@@ -146,7 +147,7 @@ def generate_launch_description():
             'motor_speed_unit': motor_speed_unit,
             'left_wheel_joint_direction': -1.0,
             'right_wheel_joint_direction': -1.0,
-            'wheel_radius': 0.0175,
+            'wheel_radius': 0.035,
         }],
     )
 
@@ -285,7 +286,7 @@ def generate_launch_description():
         DeclareLaunchArgument('chassis_serial_port', default_value='/dev/ttyS0'),
         DeclareLaunchArgument('chassis_baudrate', default_value='115200'),
         DeclareLaunchArgument('wheel_track', default_value='0.2948'),
-        DeclareLaunchArgument('wheel_diameter', default_value='0.035'),
+        DeclareLaunchArgument('wheel_diameter', default_value='0.07'),
         DeclareLaunchArgument('motor_speed_topic', default_value='/motor_speed'),
         DeclareLaunchArgument('motor_speed_unit', default_value='rpm'),
         DeclareLaunchArgument('motor_speed_scale', default_value='1.0'),
@@ -320,7 +321,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'rviz_config',
-            default_value=os.path.join(bringup_share, 'config', 'default.rviz'),
+            default_value=source_rviz_config,
         ),
         hardware_bringup,
         cartographer_localization_node,

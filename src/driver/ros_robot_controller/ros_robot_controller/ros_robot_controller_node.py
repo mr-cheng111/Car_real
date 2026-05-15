@@ -33,7 +33,7 @@ class RosRobotController(Node):
         self.declare_parameter('init_finish', False)
         self.declare_parameter('cmd_vel_topic', '/cmd_vel')
         self.declare_parameter('wheel_track', 0.2948)
-        self.declare_parameter('wheel_diameter', 0.035)
+        self.declare_parameter('wheel_diameter', 0.07)
         self.declare_parameter('motor_gain', 1.0)
         self.declare_parameter('max_motor_speed', 100.0)
         self.declare_parameter('cmd_vel_timeout', 0.5)

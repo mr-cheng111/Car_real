@@ -12,7 +12,7 @@
   <xacro:property name="base_link_height" value="${base_height/2}"/>  <!-- base_link 位于车体中心，高于地面 5cm -->
   
   <!-- 轮子参数 -->
-  <xacro:property name="wheel_radius" value="0.0175"/>  <!-- 直径3.5cm，半径1.75cm -->
+  <xacro:property name="wheel_radius" value="0.035"/>  <!-- 直径7cm，半径3.5cm -->
   <xacro:property name="wheel_width" value="0.03"/>
   <xacro:property name="wheel_mass" value="0.15"/>
   <xacro:property name="track_width" value="0.2948"/>  <!-- 左右轮中心距 294.8mm -->

@@ -18,7 +18,7 @@ def generate_launch_description():
     urdf_path = os.path.join(robot_description_dir, 'urdf', 'robot_gazebo.urdf')
     world_path = os.path.join(robot_description_dir, 'world', 'sim.world')
     ekf_path = os.path.join(robot_bringup_dir, 'config', 'ekf.yaml')
-    rviz_config_path = os.path.join(robot_bringup_dir, 'config', 'default.rviz')
+    rviz_config_path = '/home/mr-cheng/Car_real/src/robot_bringup/config/default.rviz'
 
     with open(urdf_path, 'r', encoding='utf-8') as f:
         robot_description_content = f.read()

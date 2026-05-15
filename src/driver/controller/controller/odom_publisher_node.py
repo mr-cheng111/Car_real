@@ -94,7 +94,7 @@ class Controller(Node):
         self.declare_parameter('machine_type', os.environ['MACHINE_TYPE'])
         self.declare_parameter('use_wheel_speed_feedback', True)
         self.declare_parameter('motor_speed_topic', '/motor_speed')
-        self.declare_parameter('wheel_diameter', 0.035)
+        self.declare_parameter('wheel_diameter', 0.07)
         self.declare_parameter('wheel_track', 0.2948)
         self.declare_parameter('motor_speed_unit', 'rpm')
         self.declare_parameter('left_motor_id', 2)

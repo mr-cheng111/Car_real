@@ -22,7 +22,7 @@ class WheelJointStatePublisher(Node):
         self.declare_parameter('right_motor_id', 1)
         self.declare_parameter('left_wheel_joint_direction', -1.0)
         self.declare_parameter('right_wheel_joint_direction', -1.0)
-        self.declare_parameter('wheel_radius', 0.0175)
+        self.declare_parameter('wheel_radius', 0.035)
         self.declare_parameter('motor_speed_unit', 'rpm')
         self.declare_parameter('motor_speed_timeout', 0.2)
         self.declare_parameter('publish_rate', 30.0)

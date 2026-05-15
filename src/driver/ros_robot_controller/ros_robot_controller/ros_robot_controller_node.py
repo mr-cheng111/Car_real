@@ -243,8 +243,8 @@ class RosRobotController(Node):
             dt,
         )
 
-        right_motor = _clip(right_motor_forward, -self.max_motor_speed, self.max_motor_speed)
-        left_motor = _clip(-left_motor_forward, -self.max_motor_speed, self.max_motor_speed)
+        right_motor = _clip(-right_motor_forward, -self.max_motor_speed, self.max_motor_speed)
+        left_motor = _clip(left_motor_forward, -self.max_motor_speed, self.max_motor_speed)
         self.board.set_motor_speed([[1, right_motor], [2, left_motor]])
 
     def cmd_vel_watchdog(self):

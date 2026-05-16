@@ -10,12 +10,12 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    source_rviz_config = '/home/mr-cheng/Car_real/src/robot_description/rviz/default.rviz'
     exploration_share = get_package_share_directory('exploration')
     nav2_bringup_share = get_package_share_directory('nav2_bringup')
     robot_bringup_share = get_package_share_directory('robot_bringup')
     car_nav2_share = get_package_share_directory('car_nav2')
     robot_description_share = get_package_share_directory('robot_description')
+    source_rviz_config = os.path.join(robot_description_share, 'rviz', 'default.rviz')
 
     use_sim_time = LaunchConfiguration('use_sim_time')
     nav2_params = LaunchConfiguration('nav2_params')

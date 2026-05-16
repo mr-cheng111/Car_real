@@ -10,7 +10,6 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    source_rviz_config = '/home/mr-cheng/Car_real/src/robot_bringup/config/default.rviz'
     bringup_share = get_package_share_directory('robot_bringup')
     car_nav2_share = get_package_share_directory('car_nav2')
     controller_share = get_package_share_directory('controller')
@@ -327,7 +326,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'rviz_config',
-            default_value=source_rviz_config,
+            default_value=os.path.join(bringup_share, 'config', 'default.rviz'),
         ),
         DeclareLaunchArgument('imu_i2c_bus', default_value='4'),
         DeclareLaunchArgument('imu_device_addr', default_value='0x6A'),

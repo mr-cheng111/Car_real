@@ -10,7 +10,6 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    source_rviz_config = '/home/mr-cheng/Car_real/src/robot_bringup/config/default.rviz'
     car_nav2_share = get_package_share_directory('car_nav2')
     bringup_share = get_package_share_directory('robot_bringup')
     controller_share = get_package_share_directory('controller')
@@ -325,7 +324,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'rviz_config',
-            default_value=source_rviz_config,
+            default_value=os.path.join(bringup_share, 'config', 'default.rviz'),
         ),
         hardware_bringup,
         cartographer_localization_node,

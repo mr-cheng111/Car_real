@@ -36,6 +36,7 @@ def generate_launch_description():
     motor_speed_topic = LaunchConfiguration('motor_speed_topic')
     motor_speed_unit = LaunchConfiguration('motor_speed_unit')
     motor_speed_scale = LaunchConfiguration('motor_speed_scale')
+    machine_type = LaunchConfiguration('machine_type')
     enable_speed_closed_loop = LaunchConfiguration('enable_speed_closed_loop')
     speed_kp = LaunchConfiguration('speed_kp')
     speed_ki = LaunchConfiguration('speed_ki')
@@ -133,6 +134,7 @@ def generate_launch_description():
                 'motor_speed_unit': motor_speed_unit,
                 'wheel_track': wheel_track,
                 'wheel_diameter': wheel_diameter,
+                'machine_type': machine_type,
                 'wheel_linear_direction': 1.0,
             },
         ],
@@ -291,6 +293,7 @@ def generate_launch_description():
         DeclareLaunchArgument('motor_speed_topic', default_value='/motor_speed'),
         DeclareLaunchArgument('motor_speed_unit', default_value='rpm'),
         DeclareLaunchArgument('motor_speed_scale', default_value='1.0'),
+        DeclareLaunchArgument('machine_type', default_value='rk3588'),
         DeclareLaunchArgument('enable_speed_closed_loop', default_value='true'),
         DeclareLaunchArgument('speed_kp', default_value='6.0'),
         DeclareLaunchArgument('speed_ki', default_value='1.0'),

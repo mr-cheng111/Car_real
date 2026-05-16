@@ -91,7 +91,7 @@ class Controller(Node):
         self.declare_parameter('odom_frame_id', 'odom')
         self.declare_parameter('linear_correction_factor', 1.00)
         self.declare_parameter('angular_correction_factor', 1.00)
-        self.declare_parameter('machine_type', os.environ['MACHINE_TYPE'])
+        self.declare_parameter('machine_type', os.environ.get('MACHINE_TYPE', 'rk3588'))
         self.declare_parameter('use_wheel_speed_feedback', True)
         self.declare_parameter('motor_speed_topic', '/motor_speed')
         self.declare_parameter('wheel_diameter', 0.07)
@@ -117,6 +117,7 @@ class Controller(Node):
         self.right_motor_id = int(self.get_parameter('right_motor_id').value)
         self.motor_speed_timeout = float(self.get_parameter('motor_speed_timeout').value)
         self.wheel_linear_direction = float(self.get_parameter('wheel_linear_direction').value)
+        self.machine_type = str(self.get_parameter('machine_type').value)
         self.warned_invalid_motor_speed_unit = False
 
         self.clock = self.get_clock() 
